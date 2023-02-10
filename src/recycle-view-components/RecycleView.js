@@ -1,79 +1,85 @@
 import React, { useEffect, useRef, useState } from 'react'
 
-//TODO: remove
-const testData = [
-    "ciao",
-    "ciao",
-    "ciao",
-    "ciao",
-    "ciao",
-    "ciao",
-    "ciao",
-    "ciao",
-    "ciao",
-    "ciao",
-    "ciao",
-    "ciao",
-    "ciao",
-    "ciao",
-    "ciao",
-    "ciao",
-    "ciao",
-    "ciao",
-    "ciao",
-    "ciao",
-    "ciao",
-    "ciao",
-    "ciao",
-    "ciao",
-    "ciao",
-    "ciao",
-    "ciao",
-    "ciao",
-    "ciao",
-    "ciao",
-    "ciao",
-]
+const itemListObj = {
+    dataIndex: 0,
+    items: []
+}
 
-export const RecycleView = ({ListItem, itemHeight, getData}) => {
+export const RecycleList = ({ListItem, itemHeight, getData}) => {
     const listContainer = useRef(null)
     let [items, setItems] = useState([])
-    const dataArray = testData;
+    let dataArray = getData();    
 
-    //runs once after render
     useEffect(()=>{
         const ratio = parseInt(getRatio())
-         initArray(ratio)
+        itemListObj.items = initArray(ratio)
+        itemListObj.dataIndex = 0
+        setItems(itemListObj.items)
     }, [
         listContainer.current !== null ?
-        listContainer.current.clientHeight : null
+        listContainer.current.clientHeight : null,
+        items[0].ref.current !== null ? 
+        items[0].ref.current.clientHeight : null
     ])
 
-    const  initArray = (ratio)=>{
-        setItems(
-            Array.from(Array(ratio),
+    const initArray = (ratio)=>{   
+        const newItems = Array.from(Array(ratio),
             ()=>{return {
                 index: -1,
-                value: ""
+                value: "",
+                ref: null
             }})
-            )
+        
         //javascript fa cose senza senso
         //sparatemi
-        if(items.length < 1) return
-        items.forEach((item, index)=>{
+        if(newItems.length < 1) return
+        newItems.forEach((item, index)=>{
             if(!dataArray[index]) return
             item.index = index
-            item.value = dataArray[index]
+            item.value = getNextData()
+            item.ref = React.createRef()
         })
-        console.log(items)
+        return newItems
     }
 
-    const updateData = ()=>{
-        
+    const onScroll = e=>{
+        //highest & lowest pixel
+        const yTop = e.currentTarget.scrollTop 
+        const yBottom = e.currentTarget.scrollTop+listContainer.current.clientHeight
+        const lowestItem = items.at(-1).ref.current
+        const newItemArray = [...items]
+        let newItem = null;
+        let data = null;
+
+        //TODO: full recycling
+
+        if(yBottom < lowestItem.offsetTop+itemHeight){
+            data = getNextData();
+            if(!data) return
+            newItem = {
+                index: null,
+                data: data,
+                ref: React.createRef()
+            }
+            newItemArray.push(newItem)
+            setItems(newItemArray)
+        }
+
+    }
+
+    const getNextData = ()=>{
+        const dataIndex = itemListObj.dataIndex
+        const result = dataArray[dataIndex]
+
+        if(dataIndex > dataArray.length-5) getData();
+        if(dataIndex >= dataArray.length-1) return null
+
+        itemListObj.dataIndex++;
+        return result
     }
 
     const getRatio = ()=>{
-        return listContainer.current.clientHeight/itemHeight+3;
+        return (listContainer.current.clientHeight/itemHeight)+2;
     }
 
   return (
@@ -84,11 +90,14 @@ export const RecycleView = ({ListItem, itemHeight, getData}) => {
         display: "flex",
          flexDirection: "column",
          overflowY: "scroll",
-          maxHeight: "100%",
-           minWidth: "100%"}}>
+          height: "100%",
+           minWidth: "100%"}}
+           onScroll={onScroll}>
             {items.map((value, index)=>{
-                return <ListItem key={index} />
-            })}
+                //map fa una copia dell'array quindi per settare ref devo farmi dare il puntatore direttamente dall'items originale
+                const ref = items[index].ref;
+                return <ListItem style={{height: itemHeight}} key={index} innerRef={ref} data={value.data}/>
+                })}
         </div>
   )
 }

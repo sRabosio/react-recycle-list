@@ -1,16 +1,18 @@
 import './App.css';
 import React from 'react';
-import { RecycleView } from './recycle-view-components/RecycleView';
+import { RecycleList } from './recycle-view-components/RecycleView';
 import { SimpleListItem } from './recycle-view-components/SimpleListItem';
 
 
 function App() {
   return (
-    <RecycleView
+    <RecycleList
       
       ListItem = {SimpleListItem}
-      itemHeight = {50  }
-      getData = {()=>{}}
+      itemHeight = {100}
+      getData = {()=>{
+        return new Array(200).fill("sono un pollo")
+      }}
     />
   );
 }
