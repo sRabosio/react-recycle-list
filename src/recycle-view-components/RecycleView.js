@@ -17,9 +17,7 @@ export const RecycleList = ({ListItem, itemHeight, getData}) => {
         setItems(itemListObj.items)
     }, [
         listContainer.current !== null ?
-        listContainer.current.clientHeight : null,
-        items[0].ref.current !== null ? 
-        items[0].ref.current.clientHeight : null
+        listContainer.current.clientHeight : null
     ])
 
     const initArray = (ratio)=>{   
@@ -53,7 +51,7 @@ export const RecycleList = ({ListItem, itemHeight, getData}) => {
 
         //TODO: full recycling
 
-        if(yBottom < lowestItem.offsetTop+itemHeight){
+        if(yBottom > lowestItem.offsetTop){
             data = getNextData();
             if(!data) return
             newItem = {
@@ -79,7 +77,7 @@ export const RecycleList = ({ListItem, itemHeight, getData}) => {
     }
 
     const getRatio = ()=>{
-        return (listContainer.current.clientHeight/itemHeight)+2;
+        return (listContainer.current.clientHeight/itemHeight)+1;
     }
 
   return (

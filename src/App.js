@@ -9,7 +9,7 @@ function App() {
     <RecycleList
       
       ListItem = {SimpleListItem}
-      itemHeight = {100}
+      itemHeight = {50}
       getData = {()=>{
         return new Array(200).fill("sono un pollo")
       }}
