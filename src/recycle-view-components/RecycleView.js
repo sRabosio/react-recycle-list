@@ -51,7 +51,7 @@ export const RecycleList = ({ListItem, itemHeight, getData}) => {
 
         //TODO: full recycling
 
-        if(yBottom > lowestItem.offsetTop){
+        if(yBottom > lowestItem.offsetTop-lowestItem.clientHeight*3){
             data = getNextData();
             if(!data) return
             newItem = {
