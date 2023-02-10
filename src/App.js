@@ -1,24 +1,17 @@
-import logo from './logo.svg';
 import './App.css';
+import React from 'react';
+import { RecycleView } from './recycle-view-components/RecycleView';
+import { SimpleListItem } from './recycle-view-components/SimpleListItem';
+
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <RecycleView
+      
+      ListItem = {SimpleListItem}
+      itemHeight = {50  }
+      getData = {()=>{}}
+    />
   );
 }
 
