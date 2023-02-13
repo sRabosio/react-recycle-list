@@ -11,31 +11,37 @@ export const RecycleList = ({ListItem, itemHeight, getData}) => {
     let dataArray = getData();    
 
     useEffect(()=>{
+        itemListObj.topLevel = 0
         const ratio = parseInt(getRatio())
         itemListObj.items = initArray(ratio)
         itemListObj.dataIndex = 0
+        itemListObj.bottomLevel = listContainer.current.clientHeight
         setItems(itemListObj.items)
     }, [
         listContainer.current !== null ?
         listContainer.current.clientHeight : null
     ])
 
-    const initArray = (ratio)=>{   
+    const initArray = (ratio)=>{
+        
         const newItems = Array.from(Array(ratio),
             ()=>{return {
                 index: -1,
                 value: "",
-                ref: null
+                ref: null,
+                top: 0
             }})
         
         //javascript fa cose senza senso
         //sparatemi
         if(newItems.length < 1) return
-        newItems.forEach((item, index)=>{
+        newItems.forEach((item, index, array)=>{
             if(!dataArray[index]) return
             item.index = index
             item.value = getNextData()
             item.ref = React.createRef()
+            item.top = array[index-1] ? array[index-1].top+itemHeight : 0
+            itemListObj.topLevel += itemHeight
         })
         return newItems
     }
@@ -54,13 +60,11 @@ export const RecycleList = ({ListItem, itemHeight, getData}) => {
         if(yBottom > lowestItem.offsetTop-lowestItem.clientHeight*3){
             data = getNextData();
             if(!data) return
-            newItem = {
-                index: null,
-                data: data,
-                ref: React.createRef()
-            }
-            newItemArray.push(newItem)
-            setItems(newItemArray)
+            newItem = newItemArray.shift()
+            newItem.data = data
+            newItem.top = newItemArray.at(-1).top + itemHeight
+            newItem.ref.current.style.top = newItem.top;
+            
         }
 
     }
@@ -94,7 +98,9 @@ export const RecycleList = ({ListItem, itemHeight, getData}) => {
             {items.map((value, index)=>{
                 //map fa una copia dell'array quindi per settare ref devo farmi dare il puntatore direttamente dall'items originale
                 const ref = items[index].ref;
-                return <ListItem style={{height: itemHeight}} key={index} innerRef={ref} data={value.data}/>
+                const result = <div style={{height: itemHeight, position: "absolute", left: "0", top:value.top}} ref={ref}><ListItem key={index} data={value.data}/></div>
+                itemListObj.topLevel += itemHeight
+                return result
                 })}
         </div>
   )
