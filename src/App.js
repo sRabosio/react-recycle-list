@@ -11,7 +11,6 @@ function App() {
       ListItem = {SimpleListItem}
       itemHeight = {50}
       getData = {()=>{
-        return new Array(200).fill("sono un pollo")
       }}
     />
   );
