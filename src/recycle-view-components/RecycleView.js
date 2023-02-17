@@ -4,38 +4,57 @@ const itemListObj = {
     items: []
 }
 
+/**
+ * @callback getData
+ * @param {number} dataIndex - current position in the data array
+ * @param {number} chunkSize - amount of item requested
+ * @returns {any[]} array of new data to append to the data array
+ */
+
+
+/**
+ * object that manages the data of the list
+ */
 const dataObj = {
+    getData: ()=>{return []},
     dataIndex: 0,
-    chunkSize: 10,
+    chunkSize: null,
     dataArray: [],
     getPrevData:function(){
         const prevIndex = this.dataIndex-itemListObj.items.length-1
-        if(prevIndex < 0) return
+        if(prevIndex < 0) return null
         const result = this.dataArray[prevIndex]
         this.dataIndex--
         return result
     },
     getNextData: function(){
-        if(this.dataIndex > this.dataArray.length-5) this.getData(this.dataArray);
-        if(this.dataIndex >= this.dataArray.length-1) return
+        if(this.dataIndex > this.dataArray.length-5) this.dataArray.push(...this.getData(this.dataIndex, this.chunkSize));
+        if(this.dataIndex >= this.dataArray.length-1) return null
         const result = this.dataArray[this.dataIndex]
         this.dataIndex++;
         return result
     },
-    getData: dataArray=>[]
+    init: function(chunkSize, getData){
+        this.chunkSize = chunkSize ? chunkSize : 10
+        this.getData = getData ? getData : ()=>[]
+    }
 }
 
 
-const testData = new Array(200).fill("sono un pollo")
-
-export const RecycleList = ({ListItem, itemHeight}) => {
+/**
+ * Infinite list of items that uses an n amount of components
+ * to display data.
+ * @param {Component} ListItem - components tasked with displaying data 
+ * @param {number} itemHeight - desired height for the list item
+ * @param {getData} getData - function tasked with periodically retrieving data
+ * @param {number} chunkSize - number of items to get from every call of getData 
+ */
+export const RecycleList = ({ListItem, itemHeight, getData, chunkSize}) => {
     const listContainer = useRef(null)
     let [items, setItems] = useState([])
     let [scrollTarget, setscrollTarget] = useState(null)
     const [y, setY] = useState(0)
-    dataObj.dataArray = testData
-
-    //TODO: remove
+    dataObj.init(chunkSize, getData)
 
     //list initialization
     useEffect(()=>{
@@ -50,6 +69,11 @@ export const RecycleList = ({ListItem, itemHeight}) => {
         listContainer.current.clientHeight : null
     ])
 
+    /**
+     * initializes the array of components in the list
+     * @param {number} ratio - amount of components to be created 
+     * @returns {Component[]} array of created components
+     */
     const initArray = (ratio)=>{
         
         const newItems = Array.from(Array(ratio),
@@ -59,12 +83,9 @@ export const RecycleList = ({ListItem, itemHeight}) => {
                 ref: null,
                 top: 0
             }})
-        
-        //javascript fa cose senza senso
-        //sparatemi
+
         if(newItems.length < 1) return
         newItems.forEach((item, index, array)=>{
-            if(!dataObj.dataArray[index]) return
             item.index = index
             item.data = dataObj.getNextData()
             item.ref = React.createRef()
@@ -85,7 +106,7 @@ export const RecycleList = ({ListItem, itemHeight}) => {
     }
 
     const getPosProp = itemArray=>{
-        if(!scrollTarget) return
+        if(!scrollTarget) return null
         return {
             yTop: scrollTarget.scrollTop,
             yBottom: scrollTarget.scrollTop+listContainer.current.clientHeight,
@@ -113,7 +134,9 @@ export const RecycleList = ({ListItem, itemHeight}) => {
     useEffect(onScroll, [scrollTarget])
     
     
-    
+    /**
+     * moves the first item of the list to the bottom
+     */
     const pushdown = (posProp, newItemArray)=>{
         let newItem = null;
         const data = dataObj.getNextData();
@@ -130,6 +153,9 @@ export const RecycleList = ({ListItem, itemHeight}) => {
         if(goDown(posProp)) pushdown(posProp, [...newItemArray])
     }
 
+    /**
+     * moves the last item of the list to the top
+     */
     const pushup = (posProp, newItemArray)=>{
         let newItem = null;
         const data = dataObj.getPrevData()

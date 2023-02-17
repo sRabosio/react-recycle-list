@@ -10,7 +10,16 @@ function App() {
       
       ListItem = {SimpleListItem}
       itemHeight = {50}
-      getData = {()=>{
+      getData = {(dataIndex, chunkSize)=>{
+        console.log("fetching data");
+        return [
+          "pollo",
+          "pello",
+          "pille",
+          "lello",
+          "lalle",
+          "lello"
+        ]
       }}
     />
   );
