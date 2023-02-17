@@ -33,10 +33,6 @@ const dataObj = {
         const result = this.dataArray[this.dataIndex]
         this.dataIndex++;
         return result
-    },
-    init: function(chunkSize, getData){
-        this.chunkSize = chunkSize ? chunkSize : 10
-        this.getData = getData ? getData : ()=>[]
     }
 }
 
@@ -54,7 +50,11 @@ export const RecycleList = ({ListItem, itemHeight, getData, chunkSize}) => {
     let [items, setItems] = useState([])
     let [scrollTarget, setscrollTarget] = useState(null)
     const [y, setY] = useState(0)
-    dataObj.init(chunkSize, getData)
+    
+    useEffect(()=>{
+        dataObj.chunkSize = chunkSize ? chunkSize : 10
+        dataObj.getData = getData ? getData : ()=>[]
+    }, [])
 
     //list initialization
     useEffect(()=>{

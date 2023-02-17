@@ -21,6 +21,7 @@ function App() {
           "lello"
         ]
       }}
+      chunkSize = {100}
     />
   );
 }
