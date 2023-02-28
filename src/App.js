@@ -1,6 +1,6 @@
 import './App.css';
 import React from 'react';
-import { RecycleList } from './recycle-view-components/RecycleView';
+import { RecycleList } from './recycle-view-components/RecycleList';
 import { SimpleListItem } from './recycle-view-components/SimpleListItem';
 
 
@@ -21,7 +21,6 @@ function App() {
           "lello"
         ]
       }}
-      chunkSize = {100}
     />
   );
 }

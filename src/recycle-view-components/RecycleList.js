@@ -43,7 +43,7 @@ const dataObj = {
  * @param {Component} ListItem - components tasked with displaying data 
  * @param {number} itemHeight - desired height for the list item
  * @param {getData} getData - function tasked with periodically retrieving data
- * @param {number} chunkSize - number of items to get from every call of getData 
+ * @param {number} chunkSize - number of records to get from every call of getData 
  */
 export const RecycleList = ({ListItem, itemHeight, getData, chunkSize}) => {
     const listContainer = useRef(null)
