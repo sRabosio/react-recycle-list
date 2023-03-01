@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { Component, useEffect, useRef, useState } from 'react'
 
 const itemListObj = {
     items: []
@@ -9,6 +9,14 @@ const itemListObj = {
  * @param {number} dataIndex - current position in the data array
  * @param {number} chunkSize - amount of item requested
  * @returns {any[]} array of new data to append to the data array
+ * **/
+
+
+/**
+ * @callback createListItem
+ * @param {object} data - data given by the list to be passed in the props of the list item
+ * @param {number} key
+ * @return {Component} react component
  */
 
 
@@ -28,7 +36,7 @@ const dataObj = {
         return result
     },
     getNextData: function(){
-        if(this.dataIndex > this.dataArray.length-5) this.dataArray.push(...this.getData(this.dataIndex, this.chunkSize));
+        if(this.dataIndex > this.dataArray.length-5) this.dataArray.push(...this.getData(this.dataArray.length-1, this.chunkSize));
         if(this.dataIndex >= this.dataArray.length-1) return null
         const result = this.dataArray[this.dataIndex]
         this.dataIndex++;
@@ -40,12 +48,12 @@ const dataObj = {
 /**
  * Infinite list of items that uses an n amount of components
  * to display data.
- * @param {Component} ListItem - components tasked with displaying data 
+ * @param {createListItem} createListItem - components tasked with displaying data 
  * @param {number} itemHeight - desired height for the list item
  * @param {getData} getData - function tasked with periodically retrieving data
  * @param {number} chunkSize - number of records to get from every call of getData 
  */
-export const RecycleList = ({ListItem, itemHeight, getData, chunkSize}) => {
+export const RecycleList = ({createListItem, itemHeight, getData, chunkSize}) => {
     const listContainer = useRef(null)
     let [items, setItems] = useState([])
     let [scrollTarget, setscrollTarget] = useState(null)
@@ -195,7 +203,7 @@ export const RecycleList = ({ListItem, itemHeight, getData, chunkSize}) => {
                 //map fa una copia dell'array quindi per settare ref devo farmi dare il puntatore direttamente dall'items originale
                 const ref = items[index].ref;
                 const result = <div style={{height: itemHeight, position: "absolute", left: "0", top:value.top}} key={index} ref={ref}>
-                    <ListItem key={index} data={value.data}/>
+                    {createListItem(value.data, index)}
                     </div>
                 itemListObj.topLevel += itemHeight
                 return result

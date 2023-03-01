@@ -3,23 +3,26 @@ import React from 'react';
 import { RecycleList } from './recycle-view-components/RecycleList';
 import { SimpleListItem } from './recycle-view-components/SimpleListItem';
 
+const data = [
+  "pollo",
+  "pello",
+  "pille",
+  "lello",
+  "lalle",
+  "lello"
+]
+
 
 function App() {
   return (
     <RecycleList
       
-      ListItem = {SimpleListItem}
+      createListItem = {(data, key)=><SimpleListItem data={data} key={key}/>}
       itemHeight = {50}
-      getData = {(dataIndex, chunkSize)=>{
+      getData = {(index, chunkSize)=>{
         console.log("fetching data");
-        return [
-          "pollo",
-          "pello",
-          "pille",
-          "lello",
-          "lalle",
-          "lello"
-        ]
+        if(index > data.length-1) return []
+        return data.slice(index, index+chunkSize)
       }}
     />
   );
