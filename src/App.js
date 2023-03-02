@@ -22,6 +22,7 @@ function App() {
       getData = {(index, chunkSize)=>{
         console.log("fetching data");
         if(index > data.length-1) return []
+        console.log("next data", {index, chunkSize, data});
         return data.slice(index, index+chunkSize)
       }}
     />
