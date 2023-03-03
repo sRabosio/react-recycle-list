@@ -19,12 +19,8 @@ function App() {
       
       createListItem = {(data, key)=><SimpleListItem data={data} key={key}/>}
       itemHeight = {50}
-      listItemStyles = {{backgroundColor: "red"}}
       getData = {(index, chunkSize)=>{
-        console.log("fetching data");
-        if(index > data.length-1) return []
-        console.log("next data", {index, chunkSize, data});
-        return data.slice(index, index+chunkSize)
+        return data
       }}
     />
   );

@@ -42,8 +42,7 @@ const dataObj = {
         );
     if (this.dataIndex >= this.dataArray.length) return null;
     const result = this.dataArray[this.dataIndex];
-    this.dataIndex++;
-    console.log(this.dataArray);
+    this.dataIndex++
     return result;
   },
 };
@@ -74,14 +73,18 @@ export const RecycleList = ({
     dataObj.getData = getData ? getData : () => [];
   }, []);
 
-  //list initialization
-  useEffect(() => {
+  const init = ()=>{
     dataObj.dataIndex = 0;
     itemListObj.topLevel = 0;
     const ratio = parseInt(getRatio());
     itemListObj.items = initArray(ratio);
     itemListObj.bottomLevel = listContainer.current.clientHeight;
     setItems(itemListObj.items);
+  }
+
+  //list initialization
+  useEffect(() => {
+    init()
   }, [
     listContainer.current !== null ? listContainer.current.clientHeight : null,
   ]);
@@ -152,6 +155,16 @@ export const RecycleList = ({
     setY(posProp.yCenter);
     setscrollTarget(null);
   };
+
+  //onResize
+  useEffect(() => {
+    if (!listContainer.current) return; // wait for the elementRef to be available
+    const resizeObserver = new ResizeObserver(() => {
+      init()
+    });
+    resizeObserver.observe(listContainer.current);
+    return () => resizeObserver.disconnect(); // clean up 
+  }, []);
 
   useEffect(onScroll, [scrollTarget]);
 
