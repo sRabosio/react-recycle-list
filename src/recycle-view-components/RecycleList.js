@@ -55,12 +55,14 @@ const dataObj = {
  * @param {number} itemHeight - desired height for the list item
  * @param {getData} getData - function tasked with periodically retrieving data
  * @param {number} chunkSize - number of records to get from every call of getData
+ * @param {object} listItemStyles - additional styles to be applied to the listitem wrapper
  */
 export const RecycleList = ({
   createListItem,
   itemHeight,
   getData,
   chunkSize,
+  listItemStyles
 }) => {
   const listContainer = useRef(null);
   let [items, setItems] = useState([]);
@@ -87,7 +89,7 @@ export const RecycleList = ({
   /**
    * initializes the array of components in the list
    * @param {number} ratio - amount of components to be created
-   * @returns {Component[]} array of created components
+   * @returns {object[]} array of created components
    */
   const initArray = (ratio) => {
     const newItems = Array.from(Array(ratio), () => {
@@ -222,7 +224,9 @@ export const RecycleList = ({
               height: itemHeight,
               position: "absolute",
               left: "0",
+              width: "100%",
               top: value.top,
+              ...listItemStyles
             }}
             key={index}
             ref={ref}
