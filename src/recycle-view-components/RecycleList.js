@@ -112,7 +112,7 @@ export const RecycleList = ({
       item.top = array[index - 1] ? array[index - 1].top + itemHeight : 0;
       itemListObj.topLevel += itemHeight;
     });
-    return newItems;
+    return newItems.filter(e=>e.data!==null)
   };
 
   const scrollDirection = (posProp) => {
