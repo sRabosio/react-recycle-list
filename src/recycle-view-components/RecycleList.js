@@ -61,8 +61,10 @@ export const RecycleList = ({
   itemHeight,
   getData,
   chunkSize,
-  listItemStyles
-}) => {
+  listItemStyles,
+  buffer
+  }) => {
+  const bufferSize = buffer ? buffer : 10 
   const listContainer = useRef(null);
   let [items, setItems] = useState([]);
   let [scrollTarget, setscrollTarget] = useState(null);
@@ -112,12 +114,30 @@ export const RecycleList = ({
       item.top = array[index - 1] ? array[index - 1].top + itemHeight : 0;
       itemListObj.topLevel += itemHeight;
     });
-    return newItems.filter(e=>e.data!==null)
+
+    //adding buffer
+    for(let i = 0; i < bufferSize; i++){
+      newItems.unshift({
+        data: dataObj.getPrevData(),
+        ref: React.createRef(),
+        top: newItems[0].top-itemHeight
+      })
+      newItems.push({
+        data: dataObj.getNextData(),
+        ref: React.createRef(),
+        top: newItems.at(-1).top + itemHeight
+      })
+    }
+
+    return newItems.filter(e=>e.data!==null || e.top<0)
   };
 
   const scrollDirection = (posProp) => {
     return posProp.yCenter < y ? "top" : "bottom";
   };
+
+
+  //TODO: recalculate heights
   const goDown = (posProp) => {
     return (
       posProp.yTop >
