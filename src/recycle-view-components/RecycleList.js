@@ -55,6 +55,7 @@ const dataObj = {
  * @param {getData} getData - function tasked with periodically retrieving data
  * @param {number} chunkSize - number of records to get from every call of getData
  * @param {object} listItemStyles - additional styles to be applied to the listitem wrapper
+ * @param {number} bufferSize - size of the buffer of the list. 10 for default.
  */
 export const RecycleList = ({
   createListItem,
@@ -73,6 +74,8 @@ export const RecycleList = ({
   useEffect(() => {
     dataObj.chunkSize = chunkSize ? chunkSize : 10;
     dataObj.getData = getData ? getData : () => [];
+
+    
   }, []);
 
   const init = ()=>{
@@ -156,8 +159,8 @@ export const RecycleList = ({
   const getPosProp = (itemArray) => {
     if (!scrollTarget) return null;
     return {
-      yTop: scrollTarget.scrollTop,
-      yBottom: scrollTarget.scrollTop + listContainer.current.clientHeight,
+      yTop: scrollTarget.scrollTop - ((bufferSize) * itemHeight),
+      yBottom: scrollTarget.scrollTop + listContainer.current.clientHeight + ((bufferSize) * itemHeight),
       yCenter: scrollTarget.scrollTop + listContainer.current.clientHeight / 2,
       lowestItem: itemArray.at(-1).ref.current,
       highestItem: itemArray.at(0).ref.current,
@@ -167,9 +170,11 @@ export const RecycleList = ({
   //moving components
   const onScroll = () => {
     if (!scrollTarget) return;
+    
     console.log("number of items: ", items.length);
     //highest & lowest pixel
     const posProp = getPosProp(items);
+
     if (goDown(posProp)) pushdown(posProp, [...items]);
     else if (goUp(posProp)) pushup(posProp, [...items]);
     setY(posProp.yCenter);

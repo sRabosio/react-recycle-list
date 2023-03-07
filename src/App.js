@@ -15,14 +15,21 @@ const data = [
 
 function App() {
   return (
-    <RecycleList
-      
-      createListItem = {(data, key)=><SimpleListItem data={data} key={key}/>}
-      itemHeight = {50}
-      getData = {(index, chunkSize)=>{
-        return data
-      }}
-    />
+    <div
+      style={{ display: "flex", placeItems: "center", position: "relative" }}
+    >
+      <div style={{ height: "800px", width: "800px" }}>
+        <RecycleList
+          createListItem={(data, key) => (
+            <SimpleListItem data={data} key={key} />
+          )}
+          itemHeight={50}
+          getData={(index, chunkSize) => {
+            return data;
+          }}
+        />
+      </div>
+    </div>
   );
 }
 
