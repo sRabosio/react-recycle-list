@@ -171,7 +171,6 @@ export const RecycleList = ({
   const onScroll = () => {
     if (!scrollTarget) return;
     
-    console.log("number of items: ", items.length);
     //highest & lowest pixel
     const posProp = getPosProp(items);
 
