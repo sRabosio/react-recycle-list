@@ -1,7 +1,7 @@
-import './App.css';
-import React from 'react';
-import { RecycleList } from './recycle-view-components/RecycleList';
-import { SimpleListItem } from './recycle-view-components/SimpleListItem';
+import "./App.css";
+import React from "react";
+import { RecycleList } from "./recycle-view-components/RecycleList";
+import { SimpleListItem } from "./recycle-view-components/SimpleListItem";
 
 const data = [
   "pollo",
@@ -147,9 +147,8 @@ const data = [
   "pille",
   "lello",
   "lalle",
-  "lello"
-]
-
+  "lello",
+];
 
 function App() {
   return (
@@ -162,10 +161,9 @@ function App() {
             <SimpleListItem data={data} key={key} />
           )}
           itemHeight={50}
-          getData={(index, chunkSize) => {
-            console.log('fetching data');
+          getData={async (index, chunkSize) => {
+            await new Promise((r) => setTimeout(r, 2000));
             if (index > data.length - 1) return [];
-            console.log('next data', { index, chunkSize, data });
             return data.slice(index, index + chunkSize);
           }}
         />
