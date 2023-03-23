@@ -73,6 +73,7 @@ export const RecycleList = ({
   deps,
 }) => {
   const bufferSize = buffer ? buffer : 10;
+  if (!deps) deps = [];
   const listContainer = useRef(null);
   let [items, setItems] = useState([]);
   let [scrollTarget, setscrollTarget] = useState(null);
@@ -84,19 +85,22 @@ export const RecycleList = ({
   }, []);
 
   const init = async () => {
+    dataObj.dataArray = [];
     dataObj.dataIndex = 0;
     itemListObj.topLevel = 0;
     const ratio = parseInt(getRatio());
     itemListObj.items = await initArray(ratio);
     itemListObj.bottomLevel = listContainer.current.clientHeight;
-    setItems(itemListObj.items);
+    setItems([...itemListObj.items]);
   };
 
   //list initialization
   useEffect(() => {
     init();
+    console.log("EFFECT 2.0");
   }, [
     listContainer.current !== null ? listContainer.current.clientHeight : null,
+    ...deps,
   ]);
 
   /**
@@ -200,7 +204,7 @@ export const RecycleList = ({
     });
     resizeObserver.observe(listContainer.current);
     return () => resizeObserver.disconnect(); // clean up
-  }, [...deps]);
+  }, []);
 
   useEffect(onScroll, [scrollTarget]);
 

@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { RecycleList } from "./recycle-view-components/RecycleList";
 import { SimpleListItem } from "./recycle-view-components/SimpleListItem";
 
-const data = [
+let data = [
   "pollo",
   "pello",
   "pille",
@@ -154,7 +154,10 @@ const data = [
 function App() {
   const [depo, setDepo] = useState("");
 
-  setTimeout(() => setDepo("ciao"), 5000);
+  setTimeout(() => {
+    data = new Array(50).fill("a");
+    setDepo("ciao");
+  }, 5000);
 
   return (
     <div
