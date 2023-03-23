@@ -42,6 +42,7 @@ const dataObj = {
         this.dataArray.length === 0 ? 0 : this.dataArray.length,
         this.chunkSize
       );
+      console.log("new data", newData);
       this.dataArray.push(...newData);
     }
     if (this.dataIndex >= this.dataArray.length) return null;
@@ -60,6 +61,7 @@ const dataObj = {
  * @param {number} chunkSize - number of records to get from every call of getData
  * @param {object} listItemStyles - additional styles to be applied to the listitem wrapper
  * @param {number} bufferSize - size of the buffer of the list. 10 for default.
+ * @param {array<any>} deps - dependencies to trigger rerender
  */
 export const RecycleList = ({
   createListItem,
@@ -68,6 +70,7 @@ export const RecycleList = ({
   chunkSize,
   listItemStyles,
   buffer,
+  deps,
 }) => {
   const bufferSize = buffer ? buffer : 10;
   const listContainer = useRef(null);
@@ -85,7 +88,6 @@ export const RecycleList = ({
     itemListObj.topLevel = 0;
     const ratio = parseInt(getRatio());
     itemListObj.items = await initArray(ratio);
-    console.log(itemListObj.items);
     itemListObj.bottomLevel = listContainer.current.clientHeight;
     setItems(itemListObj.items);
   };
@@ -123,7 +125,6 @@ export const RecycleList = ({
 
     for (const item of newItems) {
       item.data = await dataObj.getNextData();
-      console.log(item.data);
     }
 
     //adding buffer
@@ -192,13 +193,14 @@ export const RecycleList = ({
 
   //onResize
   useEffect(() => {
+    console.log("USE EFFECT");
     if (!listContainer.current) return; // wait for the elementRef to be available
     const resizeObserver = new ResizeObserver(() => {
       init();
     });
     resizeObserver.observe(listContainer.current);
     return () => resizeObserver.disconnect(); // clean up
-  }, []);
+  }, [...deps]);
 
   useEffect(onScroll, [scrollTarget]);
 

@@ -1,7 +1,9 @@
-import React from 'react'
+import React from "react";
 
-export const SimpleListItem = ({data}) => {
+export const SimpleListItem = ({ data }) => {
   return (
-    <div style={{minWidth: "100%", minHeight:"50px", position: "relative"}}>{data}</div>
-  )
-}
+    <div style={{ minWidth: "100%", minHeight: "50px", position: "relative" }}>
+      {data}
+    </div>
+  );
+};
