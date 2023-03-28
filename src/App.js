@@ -2,6 +2,7 @@ import "./App.css";
 import React, { useState } from "react";
 import { RecycleList } from "./recycle-view-components/RecycleList";
 import { SimpleListItem } from "./recycle-view-components/SimpleListItem";
+import Asd from "./recycle-view-components/Asd";
 
 let data = [
   "pollo",
@@ -153,6 +154,38 @@ let data = [
 
 function App() {
   const [depo, setDepo] = useState("");
+  const [S, setS] = useState(() => () => {
+    return (
+      <div
+        style={{
+          display: "flex",
+          placeItems: "center",
+          position: "relative",
+        }}
+      >
+        <div
+          style={{
+            height: "800px",
+            width: "800px",
+            border: "1px solid black",
+          }}
+        >
+          <RecycleList
+            createListItem={(data, key) => (
+              <SimpleListItem data={data} key={key} />
+            )}
+            itemHeight={50}
+            getData={async (index, chunkSize) => {
+              await new Promise((r) => setTimeout(r, 2000));
+              if (index > --data.length) return [];
+              return data.slice(index, index + chunkSize);
+            }}
+            deps={[depo]}
+          />
+        </div>
+      </div>
+    );
+  });
 
   setTimeout(() => {
     data = new Array(50).fill("a");
@@ -160,26 +193,10 @@ function App() {
   }, 5000);
 
   return (
-    <div
-      style={{ display: "flex", placeItems: "center", position: "relative" }}
-    >
-      <div
-        style={{ height: "800px", width: "800px", border: "1px solid black" }}
-      >
-        <RecycleList
-          createListItem={(data, key) => (
-            <SimpleListItem data={data} key={key} />
-          )}
-          itemHeight={50}
-          getData={async (index, chunkSize) => {
-            await new Promise((r) => setTimeout(r, 2000));
-            if (index > --data.length) return [];
-            return data.slice(index, index + chunkSize);
-          }}
-          deps={[depo]}
-        />
-      </div>
-    </div>
+    <>
+      <button onClick={() => setS(() => () => <Asd />)}>switch</button>
+      <S></S>
+    </>
   );
 }
 

@@ -42,7 +42,6 @@ const dataObj = {
         this.dataArray.length === 0 ? 0 : this.dataArray.length,
         this.chunkSize
       );
-      console.log("new data", newData);
       this.dataArray.push(...newData);
     }
     if (this.dataIndex >= this.dataArray.length) return null;
@@ -90,14 +89,13 @@ export const RecycleList = ({
     itemListObj.topLevel = 0;
     const ratio = parseInt(getRatio());
     itemListObj.items = await initArray(ratio);
-    itemListObj.bottomLevel = listContainer.current.clientHeight;
+    itemListObj.bottomLevel = listContainer.current?.clientHeight;
     setItems([...itemListObj.items]);
   };
 
   //list initialization
   useEffect(() => {
     init();
-    console.log("EFFECT 2.0");
   }, [
     listContainer.current !== null ? listContainer.current.clientHeight : null,
     ...deps,
@@ -109,6 +107,7 @@ export const RecycleList = ({
    * @returns {object[]} array of created components
    */
   const initArray = async (ratio) => {
+    if (ratio <= 0) return;
     const newItems = Array.from(Array(ratio), () => {
       return {
         index: -1,
@@ -197,13 +196,12 @@ export const RecycleList = ({
 
   //onResize
   useEffect(() => {
-    console.log("USE EFFECT");
     if (!listContainer.current) return; // wait for the elementRef to be available
     const resizeObserver = new ResizeObserver(() => {
       init();
     });
     resizeObserver.observe(listContainer.current);
-    return () => resizeObserver.disconnect(); // clean up
+    return () => resizeObserver.disconnect();
   }, []);
 
   useEffect(onScroll, [scrollTarget]);
@@ -247,6 +245,7 @@ export const RecycleList = ({
   };
 
   const getRatio = () => {
+    if (!listContainer.current) return 0;
     return listContainer.current.clientHeight / itemHeight + 3;
   };
 
