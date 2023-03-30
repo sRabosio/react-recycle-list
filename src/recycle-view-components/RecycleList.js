@@ -49,6 +49,11 @@ const dataObj = {
     this.dataIndex++;
     return result;
   },
+  reset: function () {
+    this.dataArray = [];
+    this.chunkSize = null;
+    this.dataIndex = 0;
+  },
 };
 
 /**
@@ -81,6 +86,10 @@ export const RecycleList = ({
   useEffect(() => {
     dataObj.chunkSize = chunkSize ? chunkSize : 10;
     dataObj.getData = getData ? getData : () => [];
+    return () => {
+      itemListObj.items = [];
+      dataObj.reset();
+    };
   }, []);
 
   const init = async () => {
