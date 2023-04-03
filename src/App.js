@@ -1,5 +1,5 @@
 import "./App.css";
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { RecycleList } from "./recycle-view-components/RecycleList";
 import { SimpleListItem } from "./recycle-view-components/SimpleListItem";
 import Asd from "./recycle-view-components/Asd";
@@ -154,8 +154,60 @@ let data = [
 
 function App() {
   const [depo, setDepo] = useState("");
-  const [S, setS] = useState(() => () => {
-    return (
+  const [s, setS] = useState([]);
+  const dataCallback = (index, chunkSize) => {
+    console.log("s", s);
+    let d = s.length > 0 ? s : data;
+    //await new Promise((r) => setTimeout(r, 2000));
+    if (index > d.length - 1) return [];
+    return d.slice(index, index + chunkSize);
+  };
+
+  useEffect(() => {
+    console.log("render");
+  }, [s]);
+
+  return (
+    <>
+      <button
+        onClick={() =>
+          setS([
+            "b",
+            "b",
+            "b",
+            "b",
+            "b",
+            "b",
+            "b",
+            "b",
+            "b",
+            "b",
+            "b",
+            "b",
+            "b",
+            "b",
+            "b",
+            "b",
+            "b",
+            "b",
+            "b",
+            "b",
+            "b",
+            "b",
+            "b",
+            "b",
+            "b",
+            "b",
+            "b",
+            "b",
+            "b",
+            "b",
+            "b",
+          ])
+        }
+      >
+        switch
+      </button>
       <div
         style={{
           display: "flex",
@@ -175,27 +227,11 @@ function App() {
               <SimpleListItem data={data} key={key} />
             )}
             itemHeight={50}
-            getData={async (index, chunkSize) => {
-              await new Promise((r) => setTimeout(r, 2000));
-              if (index > --data.length) return [];
-              return data.slice(index, index + chunkSize);
-            }}
-            deps={[depo]}
+            getData={dataCallback}
+            deps={[s]}
           />
         </div>
       </div>
-    );
-  });
-
-  setTimeout(() => {
-    data = new Array(50).fill("a");
-    setDepo("ciao");
-  }, 5000);
-
-  return (
-    <>
-      <button onClick={() => setS(() => () => <Asd />)}>switch</button>
-      <S></S>
     </>
   );
 }

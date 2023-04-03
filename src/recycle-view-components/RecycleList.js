@@ -21,39 +21,42 @@ const itemListObj = {
 /**
  * object that manages the data of the list
  */
-const dataObj = {
-  getData: async () => {
-    return [];
-  },
-  dataIndex: 0,
-  chunkSize: null,
-  dataArray: [],
-  getPrevData: function () {
-    const prevIndex = this.dataIndex - itemListObj.items.length - 1;
-    if (prevIndex < 0) return null;
-    const result = this.dataArray[prevIndex];
-    this.dataIndex--;
-    return result;
-  },
-  getNextData: async function () {
-    let newData;
-    if (this.dataIndex > this.dataArray.length - 5) {
-      newData = await this.getData(
-        this.dataArray.length === 0 ? 0 : this.dataArray.length,
-        this.chunkSize
-      );
-      this.dataArray.push(...newData);
-    }
-    if (this.dataIndex >= this.dataArray.length) return null;
-    const result = this.dataArray[this.dataIndex];
-    this.dataIndex++;
-    return result;
-  },
-  reset: function () {
-    this.dataArray = [];
-    this.chunkSize = null;
-    this.dataIndex = 0;
-  },
+
+const createDataObj = () => {
+  return {
+    getData: async () => {
+      return [];
+    },
+    dataIndex: 0,
+    chunkSize: null,
+    dataArray: [],
+    getPrevData: function () {
+      const prevIndex = this.dataIndex - itemListObj.items.length - 1;
+      if (prevIndex < 0) return null;
+      const result = this.dataArray[prevIndex];
+      this.dataIndex--;
+      return result;
+    },
+    getNextData: async function () {
+      let newData;
+      if (this.dataIndex > this.dataArray.length - 5) {
+        newData = await this.getData(
+          this.dataArray.length === 0 ? 0 : this.dataArray.length,
+          this.chunkSize
+        );
+        this.dataArray.push(...newData);
+      }
+      if (this.dataIndex >= this.dataArray.length) return null;
+      const result = this.dataArray[this.dataIndex];
+      this.dataIndex++;
+      return result;
+    },
+    reset: function () {
+      this.dataArray = [];
+      this.chunkSize = null;
+      this.dataIndex = 0;
+    },
+  };
 };
 
 /**
@@ -82,15 +85,7 @@ export const RecycleList = ({
   let [items, setItems] = useState([]);
   let [scrollTarget, setscrollTarget] = useState(null);
   const [y, setY] = useState(0);
-
-  useEffect(() => {
-    dataObj.chunkSize = chunkSize ? chunkSize : 10;
-    dataObj.getData = getData ? getData : () => [];
-    return () => {
-      itemListObj.items = [];
-      dataObj.reset();
-    };
-  }, []);
+  let dataObj;
 
   const init = async () => {
     dataObj.dataArray = [];
@@ -100,10 +95,16 @@ export const RecycleList = ({
     itemListObj.items = await initArray(ratio);
     itemListObj.bottomLevel = listContainer.current?.clientHeight;
     setItems([...itemListObj.items]);
+    return () => {
+      itemListObj.items = [];
+    };
   };
 
   //list initialization
   useEffect(() => {
+    dataObj = createDataObj();
+    dataObj.chunkSize = chunkSize ? chunkSize : 10;
+    dataObj.getData = getData ? getData : () => [];
     init();
   }, [
     listContainer.current !== null ? listContainer.current.clientHeight : null,
@@ -116,6 +117,7 @@ export const RecycleList = ({
    * @returns {object[]} array of created components
    */
   const initArray = async (ratio) => {
+    getData();
     if (ratio <= 0) return;
     const newItems = Array.from(Array(ratio), () => {
       return {
