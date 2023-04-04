@@ -98,14 +98,14 @@ export const RecycleList = ({
     itemListObj.items = await initArray(ratio);
     itemListObj.bottomLevel = listContainer.current?.clientHeight;
     setItems([...itemListObj.items]);
-    return () => {
-      itemListObj.items = [];
-    };
   }
 
   //list initialization
   useEffect(() => {
     init();
+    return () => {
+      itemListObj.items = [];
+    };
   }, [
     listContainer.current !== null ? listContainer.current.clientHeight : null,
     ...deps,
