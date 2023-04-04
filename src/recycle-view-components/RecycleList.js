@@ -85,9 +85,12 @@ export const RecycleList = ({
   let [items, setItems] = useState([]);
   let [scrollTarget, setscrollTarget] = useState(null);
   const [y, setY] = useState(0);
-  let dataObj;
+  const dataObjRef = useRef(createDataObj());
+  const dataObj = dataObjRef.current;
 
-  const init = async () => {
+  async function init() {
+    dataObj.current = dataObj.chunkSize = chunkSize ? chunkSize : 10;
+    dataObj.getData = getData ? getData : () => [];
     dataObj.dataArray = [];
     dataObj.dataIndex = 0;
     itemListObj.topLevel = 0;
@@ -98,13 +101,10 @@ export const RecycleList = ({
     return () => {
       itemListObj.items = [];
     };
-  };
+  }
 
   //list initialization
   useEffect(() => {
-    dataObj = createDataObj();
-    dataObj.chunkSize = chunkSize ? chunkSize : 10;
-    dataObj.getData = getData ? getData : () => [];
     init();
   }, [
     listContainer.current !== null ? listContainer.current.clientHeight : null,
@@ -116,7 +116,7 @@ export const RecycleList = ({
    * @param {number} ratio - amount of components to be created
    * @returns {object[]} array of created components
    */
-  const initArray = async (ratio) => {
+  async function initArray(ratio) {
     getData();
     if (ratio <= 0) return;
     const newItems = Array.from(Array(ratio), () => {
@@ -137,6 +137,8 @@ export const RecycleList = ({
       itemListObj.topLevel += itemHeight;
     });
 
+    console.log("dataobj", dataObj);
+
     for (const item of newItems) {
       item.data = await dataObj.getNextData();
     }
@@ -156,7 +158,7 @@ export const RecycleList = ({
     }
 
     return newItems.filter((e) => e.data !== null || e.top < 0);
-  };
+  }
 
   const scrollDirection = (posProp) => {
     return posProp.yCenter < y ? "top" : "bottom";
@@ -220,8 +222,9 @@ export const RecycleList = ({
   /**
    * moves the first item of the list to the bottom
    */
-  const pushdown = async (posProp, newItemArray) => {
+  async function pushdown(posProp, newItemArray) {
     let newItem = null;
+    console.log("datafff", dataObj);
     const data = await dataObj.getNextData();
     if (!data) return;
     newItem = newItemArray.shift();
@@ -234,12 +237,12 @@ export const RecycleList = ({
 
     setItems(newItemArray);
     if (goDown(posProp)) pushdown(posProp, [...newItemArray]);
-  };
+  }
 
   /**
    * moves the last item of the list to the top
    */
-  const pushup = (posProp, newItemArray) => {
+  function pushup(posProp, newItemArray) {
     let newItem = null;
     const data = dataObj.getPrevData();
     if (!data) return;
