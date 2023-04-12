@@ -1,4 +1,6 @@
+/* eslint-disable */
 import React, { Component, useEffect, useRef, useState } from "react";
+
 
 const itemListObj = {
   items: [],
@@ -22,43 +24,7 @@ const itemListObj = {
  * object that manages the data of the list
  */
 
-const createDataObj = () => {
-  return {
-    getData: async () => {
-      return [];
-    },
-    dataIndex: 0,
-    chunkSize: null,
-    dataArray: [],
-    buffer: 0,
-    getPrevData: function () {
-      const prevIndex = this.dataIndex - itemListObj.items.length + this.buffer;
-      if (prevIndex < 0) return null;
-      const result = this.dataArray[prevIndex];
-      this.dataIndex--;
-      return result;
-    },
-    getNextData: async function () {
-      let newData;
-      if (this.dataIndex > this.dataArray.length - 5) {
-        newData = await this.getData(
-          this.dataArray.length === 0 ? 0 : this.dataArray.length,
-          this.chunkSize
-        );
-        this.dataArray.push(...newData);
-      }
-      if (this.dataIndex >= this.dataArray.length) return null;
-      const result = this.dataArray[this.dataIndex];
-      this.dataIndex++;
-      return result;
-    },
-    reset: function () {
-      this.dataArray = [];
-      this.chunkSize = null;
-      this.dataIndex = 0;
-    },
-  };
-};
+
 
 /**
  * Infinite list of items that uses an n amount of components
@@ -80,6 +46,45 @@ export const RecycleList = ({
   buffer,
   deps,
 }) => {
+
+  const createDataObj = () => {
+    return {
+      getData: async () => {
+        return [];
+      },
+      dataIndex: 0,
+      chunkSize: null,
+      dataArray: [],
+      buffer: 0,
+      getPrevData: function () {
+        const prevIndex = this.dataIndex - itemListObj.items.length + this.buffer;
+        if (prevIndex < 0) return null;
+        const result = this.dataArray[prevIndex];
+        this.dataIndex--;
+        return result;
+      },
+      getNextData: async function () {
+        let newData;
+        if (this.dataIndex > this.dataArray.length - 5) {
+          newData = await this.getData(
+            this.dataArray.length === 0 ? 0 : this.dataArray.length,
+            this.chunkSize
+          );
+          this.dataArray.push(...newData);
+        }
+        if (this.dataIndex >= this.dataArray.length) return null;
+        const result = this.dataArray[this.dataIndex];
+        this.dataIndex++;
+        return result;
+      },
+      reset: function () {
+        this.dataArray = [];
+        this.chunkSize = null;
+        this.dataIndex = 0;
+      },
+    };
+  };
+
   if (buffer !== 0 && !buffer) buffer = 10;
   if (!deps) deps = [];
   const listContainer = useRef(null);
@@ -168,6 +173,7 @@ export const RecycleList = ({
 
   //TODO: recalculate heights
   const goDown = (posProp) => {
+    if (!posProp) return false;
     return (
       posProp.yTop >
         posProp.highestItem.offsetTop + posProp.highestItem.clientHeight &&
@@ -175,6 +181,7 @@ export const RecycleList = ({
     );
   };
   const goUp = (posProp) => {
+    if (!posProp) return false;
     return (
       posProp.yBottom <
         posProp.lowestItem.offsetTop - posProp.lowestItem.clientHeight &&
@@ -202,14 +209,13 @@ export const RecycleList = ({
       console.log("finished");
       setscrollTarget(null);
       setScrolling(false);
-      setY(() => {
-        return posProp.yCenter;
-      });
+      setY(posProp.yCenter);
     };
     if (!scrollTarget && !scrolling) return;
     setScrolling(true);
     //highest & lowest pixel
     const posProp = getPosProp(items);
+    if(!posProp) return
     let pr = null;
     if (goDown(posProp)) pr = pushdown(posProp, [...items]);
     else if (goUp(posProp)) pr = pushup(posProp, [...items]);
@@ -290,7 +296,6 @@ export const RecycleList = ({
         minWidth: "100%",
       }}
       onScroll={(e) => {
-        if (scrollTarget) return;
         setscrollTarget(e.currentTarget);
       }}
     >
