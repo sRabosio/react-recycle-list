@@ -13,18 +13,17 @@ function App() {
     list: List,
     asd: Asd,
   };
-
-  console.log(lookup[depo]);
   return (
     <>
-      <button
+      {/* <button
         onClick={() => {
           setDepo("asd");
         }}
       >
         switch
       </button>
-      {lookup[depo]()}
+      {lookup[depo]()} */}
+      <List />
     </>
   );
 }

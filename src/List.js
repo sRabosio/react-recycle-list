@@ -153,9 +153,22 @@ let data = [
 export const List = () => {
   const dataCallback = (index, chunkSize) => {
     let d = [...data];
+    return [
+      "pello",
+      "pille",
+      "lello",
+      "lalle",
+      "lello",
+      "pollo",
+      "pello",
+      "pille",
+      "lello",
+      "lalle",
+      "lello",
+    ];
     //await new Promise((r) => setTimeout(r, 2000));
-    if (index > d.length - 1) return [];
-    return d.slice(index, index + chunkSize);
+    // if (index > d.length - 1) return [];
+    // return d.slice(index, index + chunkSize);
   };
 
   return (
@@ -164,6 +177,7 @@ export const List = () => {
         display: "flex",
         placeItems: "center",
         position: "relative",
+        overflow: "hidden",
       }}
     >
       <div
@@ -171,6 +185,7 @@ export const List = () => {
           height: "800px",
           width: "800px",
           border: "1px solid black",
+          overflow: "hidden",
         }}
       >
         <RecycleList
