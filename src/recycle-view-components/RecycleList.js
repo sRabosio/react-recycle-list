@@ -1,4 +1,5 @@
-import React, { Children, useRef, useState } from "react";
+import React, { Children, useEffect, useRef, useState } from "react";
+import { useInView } from "react-intersection-observer";
 
 /**
  * @callback getData
@@ -33,17 +34,23 @@ const createDataObj = ({
   items,
 }) => {
   return {
-    fetch: function () {
+    fetch: async function () {
+      if (this.isFetching) throw new Error("Is already fetching");
+      this.isFetching = true;
       if (!getData) throw new Error("Can't fetch data: no callback provided");
-      getData(
+      const result = await getData(
         this.dataArray.length === 0 ? 0 : this.dataArray.length,
         this.chunkSize
-      ).then((result) => this.dataArray.push(result));
+      );
+      this.isFetching = false;
+      return result;
     },
     dataIndex: 0,
     chunkSize: chunkSize || 25,
     dataArray: [],
     buffer: bufferSize || 10,
+    isFetching: false,
+    isGettingData: false,
     getPrevData: function () {
       const prevIndex = this.dataIndex - items.length + this.buffer;
       if (prevIndex < 0) return null;
@@ -51,11 +58,21 @@ const createDataObj = ({
       this.dataIndex--;
       return result;
     },
-    getNextData: function () {
-      if (this.dataIndex > this.dataArray.length - chunkSize) this.fetch();
-      if (this.dataIndex >= this.dataArray.length) return null;
-      const result = this.dataArray[this.dataIndex];
+    getNextData: function (onDataFetched) {
+      this.isGettingData = true;
+
+      if (this.dataIndex > this.dataArray.length - chunkSize) {
+        this.fetch().then((result) => {
+          while (isGettingData);
+          this.dataArray.push(result);
+          onDataFetched();
+        });
+      }
+
+      //if (this.dataIndex >= this.dataArray.length) return null;
+      const result = this.dataArray[this.dataIndex] || null;
       this.dataIndex++;
+      this.isGettingData = false;
       return result;
     },
     reset: function () {
@@ -73,14 +90,79 @@ export const RecycleList = ({
   chunkSize,
   bufferSize,
 }) => {
+  const listContainer = useRef(null);
   const [items, setItems] = useState([]);
   const ListItem = Children.toArray(children)[0];
   const dataObj = useRef(
     createDataObj({ getData, chunkSize: chunkSize, bufferSize, items })
   ).current;
+  const [topRef, topInView, topEntry] = useInView();
+  const [bottomRef, bottomInView, bottomEntry] = useInView();
+
+  function init() {
+    dataObj.reset();
+    const ratio = parseInt(getRatio());
+    const _items = initArray(ratio);
+    setItems([...items]);
+  }
+
+  const getRatio = () => {
+    if (!listContainer.current) return 0;
+    return listContainer.current.clientHeight / itemHeight;
+  };
+
+  //list initialization
+  useEffect(() => {
+    init();
+    console.log(items);
+    return () => {
+      setItems([]);
+    };
+  }, []);
+
+  /**
+   * initializes the array of components in the list
+   * @param {number} ratio - amount of components to be created
+   * @returns {object[]} array of created components
+   */
+  function initArray(ratio) {
+    if (ratio <= 0) return;
+
+    const itemsData = [];
+
+    while (itemsData.length < ratio) {
+      const result = dataObj.getNextData();
+      if (!result) continue;
+      itemsData.push(result);
+    }
+
+    const newItems = itemsData.map((data, index) => {
+      return {
+        data,
+        ref: React.createRef(),
+      };
+    });
+
+    //TODO: decide what to do with code below
+    // for (let i = 0; i <= buffer; i++) {
+    //   newItems.unshift({
+    //     data: dataObj.getPrevData(),
+    //     ref: React.createRef(),
+    //     top: newItems[0].top - itemHeight,
+    //   });
+    //   newItems.push({
+    //     data: await dataObj.getNextData(),
+    //     ref: React.createRef(),
+    //     top: newItems.at(-1).top + itemHeight,
+    //   });
+    // }
+
+    return newItems;
+  }
 
   return (
     <div
+      ref={listContainer}
       style={{
         position: "absolute",
         left: "0",
@@ -94,7 +176,9 @@ export const RecycleList = ({
     >
       {items.map((value, index) => {
         //map fa una copia dell'array quindi per settare ref devo farmi dare il puntatore direttamente dall'items originale
-        const ref = items[index].ref;
+        let ref = items[index].ref;
+        if (index === 0) ref = topRef;
+        if (index === items.length - 1) ref = bottomRef;
         const result = (
           <div
             style={{
