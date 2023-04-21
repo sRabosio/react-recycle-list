@@ -61,9 +61,12 @@ const createDataObj = ({
     getNextData: function (onDataFetched) {
       this.isGettingData = true;
 
-      if (this.dataIndex > this.dataArray.length - chunkSize) {
+      if (
+        this.dataIndex > this.dataArray.length - chunkSize ||
+        this.dataArray.length <= 0
+      ) {
         this.fetch().then((result) => {
-          while (isGettingData);
+          while (this.isGettingData);
           this.dataArray.push(result);
           onDataFetched();
         });
@@ -71,7 +74,7 @@ const createDataObj = ({
 
       //if (this.dataIndex >= this.dataArray.length) return null;
       const result = this.dataArray[this.dataIndex] || null;
-      this.dataIndex++;
+      if (result !== null) this.dataIndex++;
       this.isGettingData = false;
       return result;
     },
@@ -100,10 +103,12 @@ export const RecycleList = ({
   const [bottomRef, bottomInView, bottomEntry] = useInView();
 
   function init() {
+    console.log("before ratio");
     dataObj.reset();
     const ratio = parseInt(getRatio());
+    console.log(ratio);
     const _items = initArray(ratio);
-    setItems([...items]);
+    setItems([..._items]);
   }
 
   const getRatio = () => {
@@ -114,7 +119,6 @@ export const RecycleList = ({
   //list initialization
   useEffect(() => {
     init();
-    console.log(items);
     return () => {
       setItems([]);
     };
@@ -132,9 +136,11 @@ export const RecycleList = ({
 
     while (itemsData.length < ratio) {
       const result = dataObj.getNextData();
-      if (!result) continue;
+      if (result === null) continue;
       itemsData.push(result);
     }
+
+    console.log("itemsData", itemsData);
 
     const newItems = itemsData.map((data, index) => {
       return {
