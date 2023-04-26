@@ -65,33 +65,31 @@ const createDataObj = ({
       this.isGettingData = true;
       //non può essere un if!!
       //TODO: usare un interval?? (per avere un thread a parte)
-      console.log("not fetching", !this.isFetching);
-      console.log(
-        "condition",
-        !this.isFetching &&
-          (this.dataIndex > this.dataArray.length - chunkSize ||
-            this.dataArray.length <= 0)
-      );
-      if (
-        !this.isFetching &&
-        (this.dataIndex > this.dataArray.length - chunkSize ||
-          this.dataArray.length <= 0)
-      ) {
-        this.fetch().then((result) => {
-          this.dataArray.push(...result);
-          console.log("data array after fetch", this.dataArray);
-        });
-        this.isGettingData = false;
-      }
+      
 
       const currentIndex = this.dataIndex;
       this.dataIndex++;
+
+      this.doFetch()
 
       while (!this.dataArray[currentIndex]) {
         await new Promise((resolve) => setTimeout(resolve, 100));
       }
       this.isGettingData = false;
       return this.dataArray[currentIndex];
+    },
+    doFetch: function(){ 
+      if (
+        !this.isFetching &&
+        (this.dataIndex > this.dataArray.length - this.chunkSize ||
+          this.dataArray.length <= 0)
+      ) {
+        this.fetch().then((result) => {
+          this.dataArray.push(...result);
+          this.doFetch();
+        });
+        this.isGettingData = false;
+      }
     },
     reset: function () {
       this.dataArray = [];
