@@ -33,7 +33,6 @@ const createDataObj = ({
   listItemStyles,
   items,
 }) => {
-  console.log("created data object");
   return {
     fetch: async function () {
       if (this.isFetching) throw new Error("already fetching");
@@ -44,7 +43,6 @@ const createDataObj = ({
         this.chunkSize
       );
 
-      console.log(result);
       this.isFetching = false;
       return result;
     },
@@ -55,7 +53,7 @@ const createDataObj = ({
     isFetching: false,
     isGettingData: false,
     getPrevData: function () {
-      const prevIndex = this.dataIndex - items.length + this.buffer;
+      const prevIndex = this.dataIndex - items.length;
       if (prevIndex < 0) return null;
       const result = this.dataArray[prevIndex];
       this.dataIndex--;
@@ -65,12 +63,11 @@ const createDataObj = ({
       this.isGettingData = true;
       //non può essere un if!!
       //TODO: usare un interval?? (per avere un thread a parte)
-      
 
       const currentIndex = this.dataIndex;
       this.dataIndex++;
 
-      this.doFetch()
+      this.doFetch();
 
       while (!this.dataArray[currentIndex]) {
         await new Promise((resolve) => setTimeout(resolve, 100));
@@ -78,7 +75,8 @@ const createDataObj = ({
       this.isGettingData = false;
       return this.dataArray[currentIndex];
     },
-    doFetch: function(){ 
+    //recursive fetch
+    doFetch: function () {
       if (
         !this.isFetching &&
         (this.dataIndex > this.dataArray.length - this.chunkSize ||
@@ -109,15 +107,32 @@ export const RecycleList = ({
   const listContainer = useRef(null);
   const [items, setItems] = useState([]);
   const ListItem = Children.toArray(children)[0];
-  console.log(ListItem);
-  const dataObj = useRef(
+  let isMoving = false;
+  const dataObjRef = useRef(
     createDataObj({ getData, chunkSize: chunkSize, bufferSize, items })
-  ).current;
-  const [topRef, topInView, topEntry] = useInView();
-  const [bottomRef, bottomInView, bottomEntry] = useInView();
+  );
+  const dataObj = dataObjRef.current;
+  const [topRef, topInView, topEntry] = useInView({
+    onChange: (inView, entry) => {
+      if (!inView || items.at(0).top <= 0) return;
+      while (isMoving);
+      isMoving = true;
+      pushup(getPosProp(items), [...items], entry);
+      isMoving = false;
+    },
+    initialInView: false,
+  });
+  const [bottomRef, bottomInView, bottomEntry] = useInView({
+    onChange: (inView, entry) => {
+      if (!inView) return;
+      while (isMoving);
+      isMoving = true;
+      pushdown(getPosProp(items), [...items], entry);
+      isMoving = false;
+    },
+  });
 
   function init() {
-    console.log("before ratio");
     dataObj.reset();
     const ratio = parseInt(getRatio());
     console.log(ratio);
@@ -125,20 +140,53 @@ export const RecycleList = ({
     setItems([..._items]);
   }
 
+  function pushup(posProp, newItemArray, entry) {
+    let newItem = null;
+    const data = dataObj.getPrevData();
+    if (!data) return;
+    const current = entry.target;
+    newItem = newItemArray.pop();
+    newItem.data = data;
+    newItem.top = newItemArray.at(0).top - itemHeight;
+    current.style.top = newItem.top;
+    newItemArray.unshift(newItem);
+
+    posProp = getPosProp([...newItemArray]);
+
+    setItems(newItemArray);
+  }
+
+  const getPosProp = (itemArray) => {
+    return {
+      lowestItem: itemArray.at(-1).ref.current,
+      highestItem: itemArray.at(0).ref.current,
+      yTop: itemArray.at(0).top,
+      yBottom: itemArray.at(-1).top + itemHeight,
+    };
+  };
+
+  async function pushdown(posProp, newItemArray, entry) {
+    let newItem = null;
+    const current = entry.target;
+    dataObj.getNextData().then((data) => (newItem.data = data));
+    newItem = newItemArray.shift();
+    newItem.top = newItemArray.at(-1).top + itemHeight;
+    current.style.top = newItem.top;
+    newItemArray.push(newItem);
+
+    posProp = getPosProp(newItemArray);
+
+    setItems([...newItemArray]);
+  }
+
   useEffect(() => {
     if (!items[0]?.data) {
       const _items = [...items];
       _items.forEach((i, index, array) => {
-        //      while (!hasData) {
-        //show loading??
-        //conflict w/ items sate or no rerender??
         dataObj.getNextData().then((res) => {
           array[index].data = res;
-          console.log("new data 4 item", i.data);
           setItems([...array]);
         });
-
-        //    }
       });
     }
   }, [items]);
@@ -162,21 +210,11 @@ export const RecycleList = ({
    * @returns {object[]} array of created components
    */
   function initArray(ratio) {
-    console.log("init array");
     if (ratio <= 0) return;
 
-    // const newItems = itemsData.map((data, index) => {
-    //   return {
-    //     data,
-    //     ref: React.createRef(),
-    //   };
-    // });
-
-    const newItems = new Array(ratio);
-    for (let i = 0; i < newItems.length - 1; i++)
-      newItems[i] = { ref: React.createRef() };
-
-    //TODO: decide what to do with code below
+    const newItems = new Array(ratio + 3);
+    for (let i = 0; i < newItems.length; i++)
+      newItems[i] = { ref: React.createRef(), top: 0 + itemHeight * i }; //TODO: decide what to do with code below
     // for (let i = 0; i <= buffer; i++) {
     //   newItems.unshift({
     //     data: dataObj.getPrevData(),
@@ -210,10 +248,11 @@ export const RecycleList = ({
       {items.map((value, index) => {
         //map fa una copia dell'array quindi per settare ref devo farmi dare il puntatore direttamente dall'items originale
         if (!value?.data) return;
+
         let ref = items[index].ref;
+        let viewRef;
         if (index === 0) ref = topRef;
         if (index === items.length - 1) ref = bottomRef;
-        console.log("data before map", value.data);
         const result = (
           <div
             style={{
@@ -228,7 +267,6 @@ export const RecycleList = ({
             ref={ref}
           >
             {React.cloneElement(ListItem, { data: value.data, index })}
-            {/* .<ListItem data={value.data} index={index} /> */}
           </div>
         );
         //itemListObj.topLevel += itemHeight;

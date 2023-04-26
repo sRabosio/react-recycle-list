@@ -186,6 +186,7 @@ export const List = () => {
           width: "800px",
           border: "1px solid black",
           overflow: "hidden",
+          position: "relative",
         }}
       >
         <RecycleList
