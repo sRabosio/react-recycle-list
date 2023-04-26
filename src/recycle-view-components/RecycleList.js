@@ -1,4 +1,4 @@
-import React, { Children, useEffect, useRef, useState } from "react";
+import React, { Children, createRef, useEffect, useRef, useState } from "react";
 import { useInView } from "react-intersection-observer";
 
 /**
@@ -111,6 +111,7 @@ export const RecycleList = ({
   const listContainer = useRef(null);
   const [items, setItems] = useState([]);
   const ListItem = Children.toArray(children)[0];
+  console.log(ListItem);
   const dataObj = useRef(
     createDataObj({ getData, chunkSize: chunkSize, bufferSize, items })
   ).current;
@@ -127,16 +128,21 @@ export const RecycleList = ({
   }
 
   useEffect(() => {
-    items.forEach((i) => {
-      //      while (!hasData) {
-      //show loading??
-      //conflict w/ items sate or no rerender??
-      dataObj.getNextData().then((res) => {
-        i.data = res;
+    if (!items[0]?.data) {
+      const _items = [...items];
+      _items.forEach((i, index, array) => {
+        //      while (!hasData) {
+        //show loading??
+        //conflict w/ items sate or no rerender??
+        dataObj.getNextData().then((res) => {
+          array[index].data = res;
+          console.log("new data 4 item", i.data);
+          setItems([...array]);
+        });
+
+        //    }
       });
-      console.log("new data 4 item", i.data);
-      //    }
-    });
+    }
   }, [items]);
 
   const getRatio = () => {
@@ -168,7 +174,9 @@ export const RecycleList = ({
     //   };
     // });
 
-    const newItems = new Array(ratio).fill({ ref: React.createRef() });
+    const newItems = new Array(ratio);
+    for (let i = 0; i < newItems.length - 1; i++)
+      newItems[i] = { ref: React.createRef() };
 
     //TODO: decide what to do with code below
     // for (let i = 0; i <= buffer; i++) {
@@ -203,10 +211,11 @@ export const RecycleList = ({
     >
       {items.map((value, index) => {
         //map fa una copia dell'array quindi per settare ref devo farmi dare il puntatore direttamente dall'items originale
-        if (!value.data) return;
+        if (!value?.data) return;
         let ref = items[index].ref;
         if (index === 0) ref = topRef;
         if (index === items.length - 1) ref = bottomRef;
+        console.log("data before map", value.data);
         const result = (
           <div
             style={{
@@ -220,7 +229,8 @@ export const RecycleList = ({
             key={index}
             ref={ref}
           >
-            <ListItem data={value.data} index={index} />
+            {React.cloneElement(ListItem, { data: value.data, index })}
+            {/* .<ListItem data={value.data} index={index} /> */}
           </div>
         );
         //itemListObj.topLevel += itemHeight;
