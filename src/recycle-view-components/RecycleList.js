@@ -33,15 +33,18 @@ const createDataObj = ({
   listItemStyles,
   items,
 }) => {
+  console.log("created data object");
   return {
     fetch: async function () {
-      if (this.isFetching) throw new Error("Is already fetching");
+      if (this.isFetching) throw new Error("already fetching");
       this.isFetching = true;
       if (!getData) throw new Error("Can't fetch data: no callback provided");
       const result = await getData(
         this.dataArray.length === 0 ? 0 : this.dataArray.length,
         this.chunkSize
       );
+
+      console.log(result);
       this.isFetching = false;
       return result;
     },
@@ -58,25 +61,37 @@ const createDataObj = ({
       this.dataIndex--;
       return result;
     },
-    getNextData: function (onDataFetched) {
+    getNextData: async function () {
       this.isGettingData = true;
-
+      //non può essere un if!!
+      //TODO: usare un interval?? (per avere un thread a parte)
+      console.log("not fetching", !this.isFetching);
+      console.log(
+        "condition",
+        !this.isFetching &&
+          (this.dataIndex > this.dataArray.length - chunkSize ||
+            this.dataArray.length <= 0)
+      );
       if (
-        this.dataIndex > this.dataArray.length - chunkSize ||
-        this.dataArray.length <= 0
+        !this.isFetching &&
+        (this.dataIndex > this.dataArray.length - chunkSize ||
+          this.dataArray.length <= 0)
       ) {
         this.fetch().then((result) => {
-          while (this.isGettingData);
-          this.dataArray.push(result);
-          onDataFetched();
+          this.dataArray.push(...result);
+          console.log("data array after fetch", this.dataArray);
         });
+        this.isGettingData = false;
       }
 
-      //if (this.dataIndex >= this.dataArray.length) return null;
-      const result = this.dataArray[this.dataIndex] || null;
-      if (result !== null) this.dataIndex++;
+      const currentIndex = this.dataIndex;
+      this.dataIndex++;
+
+      while (!this.dataArray[currentIndex]) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
       this.isGettingData = false;
-      return result;
+      return this.dataArray[currentIndex];
     },
     reset: function () {
       this.dataArray = [];
@@ -111,6 +126,19 @@ export const RecycleList = ({
     setItems([..._items]);
   }
 
+  useEffect(() => {
+    items.forEach((i) => {
+      //      while (!hasData) {
+      //show loading??
+      //conflict w/ items sate or no rerender??
+      dataObj.getNextData().then((res) => {
+        i.data = res;
+      });
+      console.log("new data 4 item", i.data);
+      //    }
+    });
+  }, [items]);
+
   const getRatio = () => {
     if (!listContainer.current) return 0;
     return listContainer.current.clientHeight / itemHeight;
@@ -130,24 +158,17 @@ export const RecycleList = ({
    * @returns {object[]} array of created components
    */
   function initArray(ratio) {
+    console.log("init array");
     if (ratio <= 0) return;
 
-    const itemsData = [];
+    // const newItems = itemsData.map((data, index) => {
+    //   return {
+    //     data,
+    //     ref: React.createRef(),
+    //   };
+    // });
 
-    while (itemsData.length < ratio) {
-      const result = dataObj.getNextData();
-      if (result === null) continue;
-      itemsData.push(result);
-    }
-
-    console.log("itemsData", itemsData);
-
-    const newItems = itemsData.map((data, index) => {
-      return {
-        data,
-        ref: React.createRef(),
-      };
-    });
+    const newItems = new Array(ratio).fill({ ref: React.createRef() });
 
     //TODO: decide what to do with code below
     // for (let i = 0; i <= buffer; i++) {
@@ -182,6 +203,7 @@ export const RecycleList = ({
     >
       {items.map((value, index) => {
         //map fa una copia dell'array quindi per settare ref devo farmi dare il puntatore direttamente dall'items originale
+        if (!value.data) return;
         let ref = items[index].ref;
         if (index === 0) ref = topRef;
         if (index === items.length - 1) ref = bottomRef;

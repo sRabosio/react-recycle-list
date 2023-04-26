@@ -190,7 +190,7 @@ export const List = () => {
       >
         <RecycleList
           itemHeight={50}
-          getData={() => {
+          getData={async () => {
             return ["ciao", "pollo", "castoro"];
           }}
         >
