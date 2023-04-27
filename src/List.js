@@ -189,12 +189,13 @@ export const List = () => {
         }}
       >
         <RecycleList
-          createListItem={(data, key) => (
-            <SimpleListItem data={data} key={key} />
-          )}
           itemHeight={50}
-          getData={dataCallback}
-        />
+          getData={async () => {
+            return ["ciao", "pollo", "castoro"];
+          }}
+        >
+          <SimpleListItem />
+        </RecycleList>
       </div>
     </div>
   );

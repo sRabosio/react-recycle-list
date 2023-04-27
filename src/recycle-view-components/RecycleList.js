@@ -1,10 +1,5 @@
-/* eslint-disable */
-import React, { Component, useEffect, useRef, useState } from "react";
-
-
-const itemListObj = {
-  items: [],
-};
+import React, { Children, createRef, useEffect, useRef, useState } from "react";
+import { useInView } from "react-intersection-observer";
 
 /**
  * @callback getData
@@ -21,12 +16,6 @@ const itemListObj = {
  */
 
 /**
- * object that manages the data of the list
- */
-
-
-
-/**
  * Infinite list of items that uses an n amount of components
  * to display data.
  * @param {createListItem} createListItem - components tasked with displaying data
@@ -35,252 +24,174 @@ const itemListObj = {
  * @param {number} chunkSize - number of records to get from every call of getData
  * @param {object} listItemStyles - additional styles to be applied to the listitem wrapper
  * @param {number} bufferSize - size of the buffer of the list. 10 for default.
- * @param {array<any>} deps - dependencies to trigger rerender
  */
+
+const createDataObj = ({
+  getData,
+  chunkSize,
+  bufferSize,
+  listItemStyles,
+  items,
+}) => {
+  console.log("created data object");
+  return {
+    fetch: async function () {
+      if (this.isFetching) throw new Error("already fetching");
+      this.isFetching = true;
+      if (!getData) throw new Error("Can't fetch data: no callback provided");
+      const result = await getData(
+        this.dataArray.length === 0 ? 0 : this.dataArray.length,
+        this.chunkSize
+      );
+
+      console.log(result);
+      this.isFetching = false;
+      return result;
+    },
+    dataIndex: 0,
+    chunkSize: chunkSize || 25,
+    dataArray: [],
+    buffer: bufferSize || 10,
+    isFetching: false,
+    isGettingData: false,
+    getPrevData: function () {
+      const prevIndex = this.dataIndex - items.length + this.buffer;
+      if (prevIndex < 0) return null;
+      const result = this.dataArray[prevIndex];
+      this.dataIndex--;
+      return result;
+    },
+    getNextData: async function () {
+      this.isGettingData = true;
+      //non può essere un if!!
+      //TODO: usare un interval?? (per avere un thread a parte)
+      
+
+      const currentIndex = this.dataIndex;
+      this.dataIndex++;
+
+      this.doFetch()
+
+      while (!this.dataArray[currentIndex]) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+      this.isGettingData = false;
+      return this.dataArray[currentIndex];
+    },
+    doFetch: function(){ 
+      if (
+        !this.isFetching &&
+        (this.dataIndex > this.dataArray.length - this.chunkSize ||
+          this.dataArray.length <= 0)
+      ) {
+        this.fetch().then((result) => {
+          this.dataArray.push(...result);
+          this.doFetch();
+        });
+        this.isGettingData = false;
+      }
+    },
+    reset: function () {
+      this.dataArray = [];
+      this.chunkSize = null;
+      this.dataIndex = 0;
+    },
+  };
+};
+
 export const RecycleList = ({
-  createListItem,
+  children,
   itemHeight,
   getData,
   chunkSize,
-  listItemStyles,
-  buffer,
-  deps,
+  bufferSize,
 }) => {
-
-  const createDataObj = () => {
-    return {
-      getData: async () => {
-        return [];
-      },
-      dataIndex: 0,
-      chunkSize: null,
-      dataArray: [],
-      buffer: 0,
-      getPrevData: function () {
-        const prevIndex = this.dataIndex - itemListObj.items.length + this.buffer;
-        if (prevIndex < 0) return null;
-        const result = this.dataArray[prevIndex];
-        this.dataIndex--;
-        return result;
-      },
-      getNextData: async function () {
-        let newData;
-        if (this.dataIndex > this.dataArray.length - 5) {
-          newData = await this.getData(
-            this.dataArray.length === 0 ? 0 : this.dataArray.length,
-            this.chunkSize
-          );
-          this.dataArray.push(...newData);
-        }
-        if (this.dataIndex >= this.dataArray.length) return null;
-        const result = this.dataArray[this.dataIndex];
-        this.dataIndex++;
-        return result;
-      },
-      reset: function () {
-        this.dataArray = [];
-        this.chunkSize = null;
-        this.dataIndex = 0;
-      },
-    };
-  };
-
-  if (buffer !== 0 && !buffer) buffer = 10;
-  if (!deps) deps = [];
   const listContainer = useRef(null);
-  let [items, setItems] = useState([]);
-  let [scrollTarget, setscrollTarget] = useState(null);
-  const [y, setY] = useState(0);
-  const dataObjRef = useRef(createDataObj());
-  const dataObj = dataObjRef.current;
-  const [scrolling, setScrolling] = useState(false);
+  const [items, setItems] = useState([]);
+  const ListItem = Children.toArray(children)[0];
+  console.log(ListItem);
+  const dataObj = useRef(
+    createDataObj({ getData, chunkSize: chunkSize, bufferSize, items })
+  ).current;
+  const [topRef, topInView, topEntry] = useInView();
+  const [bottomRef, bottomInView, bottomEntry] = useInView();
 
-  async function init() {
-    dataObj.chunkSize = dataObj.chunkSize = chunkSize ? chunkSize : 10;
-    dataObj.getData = getData ? getData : () => [];
-    dataObj.dataArray = [];
-    dataObj.dataIndex = 0;
-    dataObj.buffer = buffer;
-    itemListObj.topLevel = 0;
+  function init() {
+    console.log("before ratio");
+    dataObj.reset();
     const ratio = parseInt(getRatio());
-    itemListObj.items = await initArray(ratio);
-    itemListObj.bottomLevel = listContainer.current?.clientHeight;
-    setItems([...itemListObj.items]);
+    console.log(ratio);
+    const _items = initArray(ratio);
+    setItems([..._items]);
   }
+
+  useEffect(() => {
+    if (!items[0]?.data) {
+      const _items = [...items];
+      _items.forEach((i, index, array) => {
+        //      while (!hasData) {
+        //show loading??
+        //conflict w/ items sate or no rerender??
+        dataObj.getNextData().then((res) => {
+          array[index].data = res;
+          console.log("new data 4 item", i.data);
+          setItems([...array]);
+        });
+
+        //    }
+      });
+    }
+  }, [items]);
+
+  const getRatio = () => {
+    if (!listContainer.current) return 0;
+    return listContainer.current.clientHeight / itemHeight;
+  };
 
   //list initialization
   useEffect(() => {
     init();
-    console.log(items);
     return () => {
-      itemListObj.items = [];
+      setItems([]);
     };
-  }, [
-    listContainer.current !== null ? listContainer.current.clientHeight : null,
-    ...deps,
-  ]);
+  }, []);
 
   /**
    * initializes the array of components in the list
    * @param {number} ratio - amount of components to be created
    * @returns {object[]} array of created components
    */
-  async function initArray(ratio) {
-    getData();
+  function initArray(ratio) {
+    console.log("init array");
     if (ratio <= 0) return;
-    const newItems = Array.from(Array(ratio), () => {
-      return {
-        index: -1,
-        data: "",
-        ref: null,
-        top: 0,
-      };
-    });
 
-    if (newItems.length < 1) return;
+    // const newItems = itemsData.map((data, index) => {
+    //   return {
+    //     data,
+    //     ref: React.createRef(),
+    //   };
+    // });
 
-    newItems.forEach((item, index, array) => {
-      item.index = index;
-      item.ref = React.createRef();
-      item.top = array[index - 1] ? array[index - 1].top + itemHeight : 0;
-      itemListObj.topLevel += itemHeight;
-    });
+    const newItems = new Array(ratio);
+    for (let i = 0; i < newItems.length - 1; i++)
+      newItems[i] = { ref: React.createRef() };
 
-    for (const item of newItems) {
-      item.data = await dataObj.getNextData();
-    }
+    //TODO: decide what to do with code below
+    // for (let i = 0; i <= buffer; i++) {
+    //   newItems.unshift({
+    //     data: dataObj.getPrevData(),
+    //     ref: React.createRef(),
+    //     top: newItems[0].top - itemHeight,
+    //   });
+    //   newItems.push({
+    //     data: await dataObj.getNextData(),
+    //     ref: React.createRef(),
+    //     top: newItems.at(-1).top + itemHeight,
+    //   });
+    // }
 
-    //adding buffer
-    for (let i = 0; i <= buffer; i++) {
-      newItems.unshift({
-        data: dataObj.getPrevData(),
-        ref: React.createRef(),
-        top: newItems[0].top - itemHeight,
-      });
-      newItems.push({
-        data: await dataObj.getNextData(),
-        ref: React.createRef(),
-        top: newItems.at(-1).top + itemHeight,
-      });
-    }
-
-    return newItems.filter((e) => e.data !== null || e.top < 0);
+    return newItems;
   }
-
-  const scrollDirection = (posProp) => {
-    return posProp.yCenter < y ? "top" : "bottom";
-  };
-
-  //TODO: recalculate heights
-  const goDown = (posProp) => {
-    if (!posProp) return false;
-    return (
-      posProp.yTop >
-        posProp.highestItem.offsetTop + posProp.highestItem.clientHeight &&
-      scrollDirection(posProp) === "bottom"
-    );
-  };
-  const goUp = (posProp) => {
-    if (!posProp) return false;
-    return (
-      posProp.yBottom <
-        posProp.lowestItem.offsetTop - posProp.lowestItem.clientHeight &&
-      scrollDirection(posProp) === "top"
-    );
-  };
-
-  const getPosProp = (itemArray) => {
-    if (!scrollTarget) return null;
-    return {
-      yTop: scrollTarget.scrollTop - buffer * itemHeight,
-      yBottom:
-        scrollTarget.scrollTop +
-        listContainer.current.clientHeight +
-        buffer * itemHeight,
-      yCenter: scrollTarget.scrollTop + listContainer.current.clientHeight / 2,
-      lowestItem: itemArray.at(-1).ref.current,
-      highestItem: itemArray.at(0).ref.current,
-    };
-  };
-
-  //moving components
-  const onScroll = () => {
-    const reset = () => {
-      console.log("finished");
-      setscrollTarget(null);
-      setScrolling(false);
-      setY(posProp.yCenter);
-    };
-    if (!scrollTarget && !scrolling) return;
-    setScrolling(true);
-    //highest & lowest pixel
-    const posProp = getPosProp(items);
-    if(!posProp) return
-    let pr = null;
-    if (goDown(posProp)) pr = pushdown(posProp, [...items]);
-    else if (goUp(posProp)) pr = pushup(posProp, [...items]);
-    console.log(pr);
-
-    if (!pr) return reset();
-    pr.then(reset);
-  };
-
-  //onResize
-  useEffect(() => {
-    if (!listContainer.current) return; // wait for the elementRef to be available
-    const resizeObserver = new ResizeObserver(() => {
-      init();
-    });
-    resizeObserver.observe(listContainer.current);
-    return () => resizeObserver.disconnect();
-  }, []);
-
-  useEffect(onScroll, [scrollTarget]);
-
-  /**
-   * moves the first item of the list to the bottom
-   */
-  async function pushdown(posProp, newItemArray) {
-    let newItem = null;
-    const data = await dataObj.getNextData();
-    if (!data) return;
-    newItem = newItemArray.shift();
-    newItem.data = data;
-    newItem.top = newItemArray.at(-1).top + itemHeight;
-    newItem.ref.current.style.top = newItem.top;
-    newItemArray.push(newItem);
-
-    posProp = getPosProp(newItemArray);
-
-    setItems([...newItemArray]);
-    if (goDown(posProp)) await pushdown(posProp, [...newItemArray]);
-  }
-
-  /**
-   * moves the last item of the list to the top
-   */
-  async function pushup(posProp, newItemArray) {
-    let newItem = null;
-    const data = dataObj.getPrevData();
-    if (!data) return;
-    newItem = newItemArray.pop();
-    newItem.data = data;
-    newItem.top = newItemArray.at(0).top - itemHeight;
-    newItem.ref.current.style.top = newItem.top;
-    newItemArray.unshift(newItem);
-    console.log(newItem);
-    console.log(newItemArray);
-
-    posProp = getPosProp([...newItemArray]);
-
-    setItems(newItemArray);
-    if (goUp(posProp)) await pushup(posProp, [...newItemArray]);
-  }
-
-  const getRatio = () => {
-    if (!listContainer.current) return 0;
-    return listContainer.current.clientHeight / itemHeight;
-  };
 
   return (
     <div
@@ -295,13 +206,14 @@ export const RecycleList = ({
         height: "100%",
         minWidth: "100%",
       }}
-      onScroll={(e) => {
-        setscrollTarget(e.currentTarget);
-      }}
     >
       {items.map((value, index) => {
         //map fa una copia dell'array quindi per settare ref devo farmi dare il puntatore direttamente dall'items originale
-        const ref = items[index].ref;
+        if (!value?.data) return;
+        let ref = items[index].ref;
+        if (index === 0) ref = topRef;
+        if (index === items.length - 1) ref = bottomRef;
+        console.log("data before map", value.data);
         const result = (
           <div
             style={{
@@ -310,15 +222,16 @@ export const RecycleList = ({
               left: "0",
               width: "100%",
               top: value.top,
-              ...listItemStyles,
+              //...listItemStyles,
             }}
             key={index}
             ref={ref}
           >
-            {createListItem(value.data, index)}
+            {React.cloneElement(ListItem, { data: value.data, index })}
+            {/* .<ListItem data={value.data} index={index} /> */}
           </div>
         );
-        itemListObj.topLevel += itemHeight;
+        //itemListObj.topLevel += itemHeight;
         return result;
       })}
     </div>
