@@ -22,7 +22,6 @@ import React, { Children, createRef, useEffect, useRef, useState } from "react";
  * @param {getData} getData - asynchronous function tasked with periodically retrieving data
  * @param {number} chunkSize - number of records to get from every call of getData
  * @param {object} listItemStyles - additional styles to be applied to the listitem wrapper
- * @param {number} bufferSize - size of the buffer of the list. 10 for default.
  */
 
 const createDataObj = ({
@@ -133,6 +132,8 @@ export const RecycleList = ({
     createDataObj({ getData, chunkSize: chunkSize, bufferSize, items })
   ).current;
   const [heightMultiplier, setHeightMultiplier] = useState(0);
+  //counts how many items are waiting for data, on 0 does stuff (aka is false in conditions)
+  let isWaitingData = 0
   let [scrollTarget, setscrollTarget] = useState(null);
   const [y, setY] = useState(0);
   const [scrolling, setScrolling] = useState(false);
@@ -202,8 +203,10 @@ export const RecycleList = ({
     const newItem = newItemArray.shift();
     if (!newItem) return;
     newItem.data = "";
+    isWaitingData++;
     dataObj.getNextData().then((data) => {
       newItem.data = data;
+      isWaitingData--;
     });
     newItem.top = newItemArray.at(-1).top + itemHeight;
     //newItem.ref.current.style.top = newItem.top;
@@ -310,7 +313,7 @@ export const RecycleList = ({
         minWidth: "100%",
       }}
       onScroll={(e) => {
-        if (scrollTarget) return;
+        if (scrollTarget || isWaitingData) return;
         setscrollTarget(e.currentTarget);
       }}
     >
