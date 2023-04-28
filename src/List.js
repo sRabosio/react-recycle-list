@@ -154,17 +154,22 @@ export const List = () => {
   const dataCallback = (index, chunkSize) => {
     let d = [...data];
     return [
-      "pello",
-      "pille",
-      "lello",
-      "lalle",
-      "lello",
-      "pollo",
-      "pello",
-      "pille",
-      "lello",
-      "lalle",
-      "lello",
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9",
+      "10",
+      "11",
+      "12",
+      "13",
+      "14",
+      "15",
+      "16",
     ];
     //await new Promise((r) => setTimeout(r, 2000));
     // if (index > d.length - 1) return [];
@@ -191,7 +196,24 @@ export const List = () => {
         <RecycleList
           itemHeight={50}
           getData={async () => {
-            return ["ciao", "pollo", "castoro"];
+            return [
+              "1",
+              "2",
+              "3",
+              "4",
+              "5",
+              "6",
+              "7",
+              "8",
+              "9",
+              "10",
+              "11",
+              "12",
+              "13",
+              "14",
+              "15",
+              "16",
+            ];
           }}
         >
           <SimpleListItem />

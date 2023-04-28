@@ -55,7 +55,7 @@ const createDataObj = ({
     queue: [],
     getPrevData: function (offset) {
       //if (this.isGettingData) return;
-      const prevIndex = this.dataIndex - offset + this.buffer;
+      const prevIndex = this.dataIndex - offset;
       console.log("prev index", {
         prevIndex,
         di: this.dataIndex,
@@ -82,17 +82,12 @@ const createDataObj = ({
 
       while (
         !this.dataArray[currentIndex] ||
-        this.queue.at(0) === currentIndex
+        this.queue.at(0) !== currentIndex
       ) {
         await new Promise((resolve) => setTimeout(resolve, 20));
       }
       this.isGettingData = false;
-      console.log("arrived", {
-        currentIndex,
-        data: this.dataArray[currentIndex],
-        queue: this.queue,
-      });
-      this.queue.pop();
+      this.queue.shift();
       return this.dataArray[currentIndex];
     },
     doFetch: function () {
@@ -138,6 +133,7 @@ export const RecycleList = ({
   let [scrollTarget, setscrollTarget] = useState(null);
   const [y, setY] = useState(0);
   const [scrolling, setScrolling] = useState(false);
+  const [rerender, setRerender] = useState(false);
 
   function init() {
     dataObj.reset();
@@ -154,25 +150,6 @@ export const RecycleList = ({
 
   const getFlexHeight = () => itemHeight * heightMultiplier;
 
-  // useEffect(() => {
-  //   //DIOCNAE
-  //   if (!items.at(-1)?.data) {
-  //     const _items = [...items];
-  //     _items.forEach((i, index, array) => {
-  //       //      while (!hasData) {
-  //       //show loading??
-  //       //conflict w/ items state or no rerender??
-  //       if (i.top < 0) return;
-  //       dataObj.getNextData().then((res) => {
-  //         array[index].data = res;
-  //         setItems([...array]);
-  //       });
-
-  //       //    }
-  //     });
-  //   }
-  // }, [items]);
-
   const getRatio = () => {
     if (!listContainer.current) return 0;
     return listContainer.current.clientHeight / itemHeight;
@@ -182,7 +159,7 @@ export const RecycleList = ({
     if (!scrollTarget) return null;
     return {
       yTop: scrollTarget.scrollTop,
-      yBottom: scrollTarget.scrollTop + getFlexHeight(),
+      yBottom: scrollTarget.scrollTop + itemHeight * getRatio(),
       yCenter: scrollTarget.scrollTop + listContainer.current.clientHeight / 2,
       lowestItem: itemArray.at(-1),
       highestItem: itemArray.at(0),
@@ -227,9 +204,11 @@ export const RecycleList = ({
     const newItem = newItemArray.shift();
     if (!newItem) return;
     newItem.data = "";
-    dataObj.getNextData().then((data) => (newItem.data = data));
+    dataObj.getNextData().then((data) => {
+      newItem.data = data;
+    });
     newItem.top = newItemArray.at(-1).top + itemHeight;
-    newItem.ref.current.style.top = newItem.top;
+    //newItem.ref.current.style.top = newItem.top;
     newItemArray.push(newItem);
 
     posProp = getPosProp(newItemArray);
@@ -240,19 +219,20 @@ export const RecycleList = ({
 
   function pushup(posProp, newItemArray) {
     let newItem = null;
+    console.log("up");
     let data = "";
-    if (newItemArray.at(0).top >= 0) {
-      const data = dataObj.getPrevData(newItemArray.length);
-      if (!data) return;
-    }
+    data = dataObj.getPrevData(newItemArray.length + 1);
+    if (!data) return;
+
     newItem = newItemArray.pop();
     newItem.data = data;
     newItem.top = newItemArray.at(0).top - itemHeight;
     newItem.ref.current.style.top = newItem.top;
     newItemArray.unshift(newItem);
+    console.log("newitem", newItem);
     posProp = getPosProp([...newItemArray]);
 
-    setItems(newItemArray);
+    setItems([...newItemArray]);
     if (goUp(posProp)) pushup(posProp, [...newItemArray]);
   }
 
@@ -269,9 +249,10 @@ export const RecycleList = ({
   };
   const goUp = (posProp) => {
     if (!posProp) return false;
+    console.log("goup", { posProp });
 
     return (
-      posProp.yBottom < posProp.lowestItem.top - itemHeight &&
+      posProp.yBottom < posProp.lowestItem.top + itemHeight &&
       scrollDirection(posProp) === "top"
     );
   };
@@ -346,7 +327,7 @@ export const RecycleList = ({
       >
         {items.map((value, index) => {
           //map fa una copia dell'array quindi per settare ref devo farmi dare il puntatore direttamente dall'items originale
-          if (!value?.data) return;
+          //if (!value.data) return;
 
           let ref = items[index].ref;
           const result = (
