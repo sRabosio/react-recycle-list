@@ -1,5 +1,4 @@
 import React, { Children, createRef, useEffect, useRef, useState } from "react";
-import { useInView } from "react-intersection-observer";
 
 /**
  * @callback getData
@@ -56,12 +55,6 @@ const createDataObj = ({
     getPrevData: function (offset) {
       //if (this.isGettingData) return;
       const prevIndex = this.dataIndex - offset;
-      console.log("prev index", {
-        prevIndex,
-        di: this.dataIndex,
-        length: offset,
-        buf: this.buffer,
-      });
       if (prevIndex < 0) return null;
       const result = this.dataArray[prevIndex];
       this.dataIndex--;
@@ -81,11 +74,12 @@ const createDataObj = ({
       this.doFetch();
 
       while (
-        !this.dataArray[currentIndex] ||
-        this.queue.at(0) !== currentIndex
+        (!this.dataArray[currentIndex] || this.queue.at(0) !== currentIndex) &&
+        !this.noData
       ) {
         await new Promise((resolve) => setTimeout(resolve, 20));
       }
+      console.log("done", currentIndex);
       this.isGettingData = false;
       this.queue.shift();
       return this.dataArray[currentIndex];
@@ -97,6 +91,14 @@ const createDataObj = ({
           this.dataArray.length <= 0)
       ) {
         this.fetch().then((result) => {
+          if (
+            !result ||
+            result.length <= 0 ||
+            Object.keys(result).length <= 0
+          ) {
+            this.noData = true;
+            return;
+          }
           this.dataArray.push(...result);
           if (this.onFetched) this.onFetched();
           this.doFetch();
@@ -104,6 +106,7 @@ const createDataObj = ({
         this.isGettingData = false;
       }
     },
+    noData: false,
     onFetched: null,
     reset: function () {
       this.dataArray = [];
@@ -137,18 +140,13 @@ export const RecycleList = ({
 
   function init() {
     dataObj.reset();
-    dataObj.onFetched = () =>
-      setHeightMultiplier(() => {
-        console.log("updated", dataObj.dataArray.length);
-        return dataObj.dataArray.length;
-      });
     const ratio = parseInt(getRatio());
 
     const _items = initArray(ratio);
     setItems([..._items]);
   }
 
-  const getFlexHeight = () => itemHeight * heightMultiplier;
+  const getFlexHeight = () => itemHeight * dataObj.dataArray.length;
 
   const getRatio = () => {
     if (!listContainer.current) return 0;
@@ -229,7 +227,6 @@ export const RecycleList = ({
     newItem.top = newItemArray.at(0).top - itemHeight;
     newItem.ref.current.style.top = newItem.top;
     newItemArray.unshift(newItem);
-    console.log("newitem", newItem);
     posProp = getPosProp([...newItemArray]);
 
     setItems([...newItemArray]);
