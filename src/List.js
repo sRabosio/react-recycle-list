@@ -189,6 +189,7 @@ export const List = () => {
         style={{
           height: "800px",
           width: "800px",
+          position: "relative",
           border: "1px solid black",
           overflow: "hidden",
         }}

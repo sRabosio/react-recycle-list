@@ -204,9 +204,12 @@ export const RecycleList = ({
     if (!newItem) return;
     newItem.data = "";
     isWaitingData++;
+    console.log(isWaitingData);
     dataObj.getNextData().then((data) => {
       newItem.data = data;
       isWaitingData--;
+      setRerender(!rerender);
+      console.log("post postdecrement", isWaitingData);
     });
     newItem.top = newItemArray.at(-1).top + itemHeight;
     //newItem.ref.current.style.top = newItem.top;
@@ -313,9 +316,10 @@ export const RecycleList = ({
         minWidth: "100%",
       }}
       onScroll={(e) => {
-        if (isWaitingData) e.preventDefault();
-        if (scrollTarget) return;
-        setscrollTarget(e.currentTarget);
+        const current = e.currentTarget;
+        console.log("isWaiting", isWaitingData);
+        if (!(isWaitingData || scrollTarget)) return setscrollTarget(current);
+        current.scrollTo(null, scrollTarget.scrollTop);
       }}
     >
       <div
