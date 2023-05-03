@@ -158,7 +158,7 @@ const RecycleList = ({
 
   const getRatio = () => {
     if (!listContainer.current) return 0;
-    return listContainer.current.clientHeight / itemHeight;
+    return Math.ceil(listContainer.current.clientHeight / itemHeight);
   };
 
   const getPosProp = (itemArray) => {
