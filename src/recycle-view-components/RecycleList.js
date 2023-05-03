@@ -313,7 +313,8 @@ export const RecycleList = ({
         minWidth: "100%",
       }}
       onScroll={(e) => {
-        if (scrollTarget || isWaitingData) return;
+        if (isWaitingData) e.preventDefault();
+        if (scrollTarget) return;
         setscrollTarget(e.currentTarget);
       }}
     >
