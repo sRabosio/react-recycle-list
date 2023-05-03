@@ -13,19 +13,7 @@ function App() {
     list: List,
     asd: Asd,
   };
-  return (
-    <>
-      {/* <button
-        onClick={() => {
-          setDepo("asd");
-        }}
-      >
-        switch
-      </button>
-      {lookup[depo]()} */}
-      <List />
-    </>
-  );
+  return <List style={{ position: "relative" }} />;
 }
 
 export default App;

@@ -1,5 +1,5 @@
 import React from "react";
-import { RecycleList } from "./recycle-view-components/RecycleList";
+import RecycleList from "./recycle-view-components/RecycleList";
 import { SimpleListItem } from "./recycle-view-components/SimpleListItem";
 
 let data = [
@@ -181,45 +181,36 @@ export const List = () => {
       style={{
         display: "flex",
         placeItems: "center",
-        position: "relative",
         overflow: "hidden",
+        height: "100%",
+        position: "relative",
       }}
     >
-      <div
-        style={{
-          height: "800px",
-          width: "800px",
-          position: "relative",
-          border: "1px solid black",
-          overflow: "hidden",
+      <RecycleList
+        itemHeight={50}
+        getData={async () => {
+          return [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+          ];
         }}
       >
-        <RecycleList
-          itemHeight={50}
-          getData={async () => {
-            return [
-              "1",
-              "2",
-              "3",
-              "4",
-              "5",
-              "6",
-              "7",
-              "8",
-              "9",
-              "10",
-              "11",
-              "12",
-              "13",
-              "14",
-              "15",
-              "16",
-            ];
-          }}
-        >
-          <SimpleListItem />
-        </RecycleList>
-      </div>
+        <SimpleListItem />
+      </RecycleList>
     </div>
   );
 };
