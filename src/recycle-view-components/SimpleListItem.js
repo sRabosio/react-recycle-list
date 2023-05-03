@@ -1,6 +1,8 @@
 import React from "react";
 
 export const SimpleListItem = ({ data }) => {
+  console.log("item data", data);
+  if (!data) return;
   return (
     <div
       style={{

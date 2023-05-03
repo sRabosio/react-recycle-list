@@ -1,4 +1,4 @@
-import React, { Children, createRef, useEffect, useRef, useState } from "react";
+import React, { Children, createRef, useEffect, useRef, useState } from 'react';
 
 /**
  * @callback getData
@@ -32,10 +32,10 @@ const createDataObj = ({
   items,
 }) => {
   return {
-    fetch: async function () {
-      if (this.isFetching) throw new Error("already fetching");
+    async fetch() {
+      if (this.isFetching) throw new Error('already fetching');
       this.isFetching = true;
-      if (!getData) throw new Error("Can't fetch data: no callback provided");
+      if (!getData) throw new Error('Cant fetch data: no callback provided');
       const result = await getData(
         this.dataArray.length === 0 ? 0 : this.dataArray.length,
         this.chunkSize
@@ -51,7 +51,7 @@ const createDataObj = ({
     isFetching: false,
     isGettingData: false,
     queue: [],
-    getPrevData: function (offset) {
+    getPrevData(offset) {
       //if (this.isGettingData) return;
       const prevIndex = this.dataIndex - offset;
       if (prevIndex < 0) return null;
@@ -59,7 +59,7 @@ const createDataObj = ({
       this.dataIndex--;
       return result;
     },
-    getNextData: async function () {
+    async getNextData() {
       this.isGettingData = true;
       //non può essere un if!!
       //TODO: usare un interval?? (per avere un thread a parte)
@@ -67,7 +67,7 @@ const createDataObj = ({
       const currentIndex = this.dataIndex;
       this.dataIndex++;
 
-      console.log("queueing ", currentIndex);
+      console.log('queueing ', currentIndex);
       this.queue.push(currentIndex);
 
       this.doFetch();
@@ -76,14 +76,15 @@ const createDataObj = ({
         (!this.dataArray[currentIndex] || this.queue.at(0) !== currentIndex) &&
         !this.noData
       ) {
+        // eslint-disable-next-line no-await-in-loop
         await new Promise((resolve) => setTimeout(resolve, 20));
       }
-      console.log("done", currentIndex);
+      console.log('done', currentIndex);
       this.isGettingData = false;
       this.queue.shift();
       return this.dataArray[currentIndex];
     },
-    doFetch: function () {
+    doFetch() {
       if (
         !this.isFetching &&
         (this.dataArray.length - this.dataIndex < this.chunkSize ||
@@ -107,7 +108,7 @@ const createDataObj = ({
     },
     noData: false,
     onFetched: null,
-    reset: function () {
+    reset() {
       this.dataArray = [];
 
       this.dataIndex = 0;
@@ -116,7 +117,7 @@ const createDataObj = ({
   };
 };
 
-export const RecycleList = ({
+const RecycleList = ({
   children,
   itemHeight,
   getData,
@@ -129,12 +130,13 @@ export const RecycleList = ({
   const [items, setItems] = useState([]);
   const ListItem = Children.toArray(children)[0];
   const dataObj = useRef(
-    createDataObj({ getData, chunkSize: chunkSize, bufferSize, items })
+    createDataObj({ getData, chunkSize, bufferSize, items })
   ).current;
   const [heightMultiplier, setHeightMultiplier] = useState(0);
   //counts how many items are waiting for data, on 0 does stuff (aka is false in conditions)
-  let isWaitingData = 0
-  let [scrollTarget, setscrollTarget] = useState(null);
+  //USE REF DIOC ANE
+  const isWaitingData = useRef(0);
+  const [scrollTarget, setscrollTarget] = useState(null);
   const [y, setY] = useState(0);
   const [scrolling, setScrolling] = useState(false);
   const [rerender, setRerender] = useState(false);
@@ -202,14 +204,14 @@ export const RecycleList = ({
   function pushdown(posProp, newItemArray) {
     const newItem = newItemArray.shift();
     if (!newItem) return;
-    newItem.data = "";
-    isWaitingData++;
-    console.log(isWaitingData);
+    newItem.data = '';
+    isWaitingData.current++;
+    console.log(isWaitingData.current);
     dataObj.getNextData().then((data) => {
       newItem.data = data;
-      isWaitingData--;
-      setRerender(!rerender);
-      console.log("post postdecrement", isWaitingData);
+      isWaitingData.current--;
+      console.log('post postdecrement', isWaitingData.current);
+      if (!isWaitingData.current) setRerender(!rerender);
     });
     newItem.top = newItemArray.at(-1).top + itemHeight;
     //newItem.ref.current.style.top = newItem.top;
@@ -223,8 +225,8 @@ export const RecycleList = ({
 
   function pushup(posProp, newItemArray) {
     let newItem = null;
-    console.log("up");
-    let data = "";
+    console.log('up');
+    let data = '';
     data = dataObj.getPrevData(newItemArray.length + 1);
     if (!data) return;
 
@@ -240,23 +242,23 @@ export const RecycleList = ({
   }
 
   const scrollDirection = (posProp) => {
-    return posProp.yCenter < y ? "top" : "bottom";
+    return posProp.yCenter < y ? 'top' : 'bottom';
   };
 
   const goDown = (posProp) => {
     if (!posProp) return false;
     return (
       posProp.yTop >= posProp.highestItem.top + itemHeight &&
-      scrollDirection(posProp) === "bottom"
+      scrollDirection(posProp) === 'bottom'
     );
   };
   const goUp = (posProp) => {
     if (!posProp) return false;
-    console.log("goup", { posProp });
+    console.log('goup', { posProp });
 
     return (
       posProp.yBottom < posProp.lowestItem.top + itemHeight &&
-      scrollDirection(posProp) === "top"
+      scrollDirection(posProp) === 'top'
     );
   };
 
@@ -296,6 +298,15 @@ export const RecycleList = ({
       //conflict w/ items state or no rerender??
       if (i.top < 0) return;
       dataObj.getNextData().then((res) => {
+        if (index === 0) {
+          setTimeout(() => {
+            array[index].data = res;
+            setItems([...array]);
+            console.log('finshed w/', res);
+          }, 1000);
+          return;
+        }
+        console.log('finshed w/', res);
         array[index].data = res;
         setItems([...array]);
       });
@@ -308,44 +319,46 @@ export const RecycleList = ({
     <div
       ref={listContainer}
       style={{
-        position: "absolute",
-        left: "0",
-        top: "0",
-        overflowY: "scroll",
-        height: "100%",
-        minWidth: "100%",
+        position: 'absolute',
+        left: '0',
+        top: '0',
+        overflowY: 'scroll',
+        height: '100%',
+        minWidth: '100%',
       }}
       onScroll={(e) => {
         const current = e.currentTarget;
-        console.log("isWaiting", isWaitingData);
-        if (!(isWaitingData || scrollTarget)) return setscrollTarget(current);
-        current.scrollTo(null, scrollTarget.scrollTop);
+        console.log('isWaiting', isWaitingData.current);
+        if (!(isWaitingData.current && scrollTarget))
+          return setscrollTarget(current);
+        //current.scrollTo(null, scrollTarget.scrollTop);
       }}
     >
       <div
         style={{
           height: getFlexHeight(),
-          position: "relative",
-          display: "flex",
-          flexDirection: "column",
+          position: 'relative',
+          display: 'flex',
+          flexDirection: 'column',
         }}
       >
         {items.map((value, index) => {
           //map fa una copia dell'array quindi per settare ref devo farmi dare il puntatore direttamente dall'items originale
           //if (!value.data) return;
-
-          let ref = items[index].ref;
+          //while (isWaitingData.current);
+          console.log('mapping', new Date().getMilliseconds());
+          const ref = items[index].ref;
           const result = (
             <div
               style={{
                 height: itemHeight,
-                position: "absolute",
-                left: "0",
-                width: "100%",
+                position: 'absolute',
+                left: '0',
+                width: '100%',
                 top: value.top,
                 //...listItemStyles,
               }}
-              key={index}
+              key={value.top}
               ref={ref}
             >
               {React.cloneElement(ListItem, { data: value.data, index })}
@@ -358,3 +371,5 @@ export const RecycleList = ({
     </div>
   );
 };
+
+export default RecycleList;
