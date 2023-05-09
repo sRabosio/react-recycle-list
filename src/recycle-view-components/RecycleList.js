@@ -1,4 +1,11 @@
-import React, { Children, createRef, useEffect, useRef, useState } from 'react';
+import React, {
+  Children,
+  Component,
+  createRef,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 /**
  * @callback getData
@@ -15,17 +22,16 @@ import React, { Children, createRef, useEffect, useRef, useState } from 'react';
  * @param {getData} getData - asynchronous function tasked with periodically retrieving data
  * @param {number} chunkSize - number of records to get from every call of getData
  * @param {object} listItemStyles - additional styles to be applied to the listitem wrapper
+
  */
 
 const createDataObj = ({ getData, chunk }) => {
   return {
     async fetch() {
-      if (this.isFetching) throw new Error('already fetching');
+      if (this.isFetching) throw new Error("already fetching");
       this.isFetching = true;
-      if (!getData) throw new Error('Cant fetch data: no callback provided');
-      console.log('before result');
+      if (!getData) throw new Error("Cant fetch data: no callback provided");
       const result = await getData(this.dataArray.length, this.chunkSize);
-      console.log('after result');
 
       this.isFetching = false;
       return result;
@@ -101,6 +107,7 @@ const createDataObj = ({ getData, chunk }) => {
  * @param {getData} getData - callback to retrive data for list
  * @param {number} chunkSize - size of the chunk of data to retrive, 10 by default
  * @param {array<any>} deps - dependency array to trigger rerender
+ * @param {Component} placeholder - component in place when data is still loading
  * @param {object} listItemStyles
  */
 const RecycleList = ({
@@ -110,6 +117,7 @@ const RecycleList = ({
   chunkSize,
   deps,
   listItemStyles,
+  placeholder,
 }) => {
   if (!deps) deps = [];
   const listContainer = useRef(null);
@@ -125,7 +133,6 @@ const RecycleList = ({
   const [rerender, setRerender] = useState(false);
 
   function init() {
-    console.log('start init');
     setItems([]);
     dataObjRef.current = createDataObj({
       getData,
@@ -137,7 +144,6 @@ const RecycleList = ({
     const ratio = parseInt(getRatio());
 
     const _items = initArray(ratio);
-    console.log('end init', _items);
     setItems([..._items]);
   }
 
@@ -167,7 +173,6 @@ const RecycleList = ({
   useEffect(() => {
     init();
     return () => {
-      console.log('stopping');
       setItems([]);
     };
   }, [
@@ -220,7 +225,7 @@ const RecycleList = ({
   function pushup(posProp, newItemArray) {
     if (!posProp) return;
     let newItem = null;
-    let data = '';
+    let data = "";
     data = dataObj.getPrevData(newItemArray.length + 1);
     if (!data) return;
 
@@ -237,14 +242,14 @@ const RecycleList = ({
 
   const scrollDirection = (posProp) => {
     if (!posProp) return;
-    return posProp.yCenter < y.current ? 'top' : 'bottom';
+    return posProp.yCenter < y.current ? "top" : "bottom";
   };
 
   const goDown = (posProp) => {
     if (!posProp) return false;
     return (
       posProp.yTop >= posProp.highestItem.top + itemHeight &&
-      scrollDirection(posProp) === 'bottom'
+      scrollDirection(posProp) === "bottom"
     );
   };
   const goUp = (posProp) => {
@@ -252,7 +257,7 @@ const RecycleList = ({
 
     return (
       posProp.yBottom < posProp.lowestItem.top + itemHeight &&
-      scrollDirection(posProp) === 'top'
+      scrollDirection(posProp) === "top"
     );
   };
 
@@ -269,7 +274,6 @@ const RecycleList = ({
    * @returns {object[]} array of created components
    */
   function initArray(ratio) {
-    console.log('start initarray');
     if (ratio <= 0) return;
 
     const newItems = [];
@@ -280,12 +284,10 @@ const RecycleList = ({
     newItems.forEach((i, index, array) => {
       if (i.top < 0) return;
       dataObj.getNextData().then((res) => {
-        console.log('got data');
         array[index].data = res;
         setItems([...array]);
       });
     });
-    console.log('end initarray');
 
     return newItems;
   }
@@ -294,12 +296,12 @@ const RecycleList = ({
     <div
       ref={listContainer}
       style={{
-        position: 'absolute',
-        left: '0',
-        top: '0',
-        overflowY: 'scroll',
-        height: '100%',
-        minWidth: '100%',
+        position: "absolute",
+        left: "0",
+        top: "0",
+        overflowY: "scroll",
+        height: "100%",
+        minWidth: "100%",
       }}
       onScroll={(e) => {
         const current = e.currentTarget;
@@ -313,30 +315,31 @@ const RecycleList = ({
       <div
         style={{
           height: getFlexHeight(),
-          position: 'relative',
-          display: 'flex',
-          flexDirection: 'column',
+          position: "relative",
+          display: "flex",
+          flexDirection: "column",
         }}
       >
         {items.map((value, index) => {
           //map fa una copia dell'array quindi per settare ref devo farmi dare il puntatore direttamente dall'items originale
 
           const ref = items[index].ref;
-          console.log('map');
           const result = (
             <div
               style={{
                 height: itemHeight,
-                position: 'absolute',
-                left: '0',
-                width: '100%',
+                position: "absolute",
+                left: "0",
+                width: "100%",
                 top: value.top,
                 ...listItemStyles,
               }}
               key={value.top}
               ref={ref}
             >
-              {value && React.cloneElement(ListItem, { data: value.data })}
+              {value
+                ? React.cloneElement(ListItem, { data: value.data })
+                : placeholder && placeholder()}
             </div>
           );
           return result;

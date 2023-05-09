@@ -1,6 +1,7 @@
 import React from "react";
 import RecycleList from "./recycle-view-components/RecycleList";
 import { SimpleListItem } from "./recycle-view-components/SimpleListItem";
+import { SimplePlaceholder } from "./recycle-view-components/SimplePlaceholder";
 
 let data = [
   "pollo",
@@ -188,6 +189,7 @@ export const List = () => {
     >
       <RecycleList
         itemHeight={50}
+        placeholder={SimplePlaceholder}
         getData={async () => {
           return [
             "1",
