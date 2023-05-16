@@ -117,6 +117,7 @@ const createDataObj = ({ getData, chunk, staticData }) => {
  * @param {array<any>} deps - dependency array to trigger rerender
  * @param {Component} placeholder - component in place when data is still loading
  * @param {object} listItemStyles
+ * @param {Array<any>} staticData - MUTUALLY EXCLUSIVE WITH GETDATA, if used has to contain all data used by the recycle list
  */
 const RecycleList = ({
   children,
