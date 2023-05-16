@@ -25,20 +25,20 @@ import React, {
 
  */
 
-const createDataObj = ({ getData, chunk }) => {
+const createDataObj = ({ getData, chunk, staticData }) => {
   return {
     async fetch() {
       if (this.isFetching) throw new Error("already fetching");
       this.isFetching = true;
-      if (!getData) throw new Error("Cant fetch data: no callback provided");
+      if (!getData && !staticData)
+        throw new Error("Cant fetch data: no callback provided");
       const result = await getData(this.dataArray.length, this.chunkSize);
-
       this.isFetching = false;
       return result;
     },
     dataIndex: 0,
     chunkSize: chunk || 25,
-    dataArray: [],
+    dataArray: staticData || [],
     isFetching: false,
     isGettingData: false,
     queue: [],
@@ -72,7 +72,14 @@ const createDataObj = ({ getData, chunk }) => {
       this.queue.shift();
       return this.dataArray[currentIndex];
     },
+    //RECURSIVE
     doFetch() {
+      //static array managemenet
+      if (staticData) {
+        if (this.dataArray.length - 1 <= this.dataIndex) this.noData = true;
+        return;
+      }
+
       if (
         !this.isFetching &&
         (this.dataArray.length - this.dataIndex < this.chunkSize ||
@@ -89,6 +96,7 @@ const createDataObj = ({ getData, chunk }) => {
               return;
             }
             this.dataArray.push(...result);
+            //self call
             this.doFetch();
           })
           .catch(() => {
@@ -116,6 +124,7 @@ const RecycleList = ({
   getData,
   chunkSize,
   deps,
+  staticData,
   listItemStyles,
   placeholder,
 }) => {
@@ -137,6 +146,7 @@ const RecycleList = ({
     dataObjRef.current = createDataObj({
       getData,
       chunkSize,
+      staticData,
     });
     dataObj = dataObjRef.current;
     isWaitingData.current = 0;
