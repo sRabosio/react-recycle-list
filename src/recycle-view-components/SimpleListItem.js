@@ -1,7 +1,12 @@
-import React from "react";
+import React, { useEffect } from "react";
 
 export const SimpleListItem = ({ data }) => {
+  useEffect(() => {
+    console.log("mounted");
+  }, []);
+
   if (!data) return;
+
   return (
     <div
       style={{

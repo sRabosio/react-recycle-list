@@ -289,7 +289,7 @@ const RecycleList = ({
 
     const newItems = [];
     for (let i = 0; i < ratio; i++)
-      newItems[i] = { ref: React.createRef(), top: itemHeight * i };
+      newItems[i] = { ref: React.createRef(), top: itemHeight * i, id: i };
 
     //initial fill with data
     newItems.forEach((i, index, array) => {
@@ -345,7 +345,8 @@ const RecycleList = ({
                 top: value.top,
                 ...listItemStyles,
               }}
-              key={value.top}
+              //CHANGE KEY??
+              key={value.id}
               ref={ref}
             >
               {value
