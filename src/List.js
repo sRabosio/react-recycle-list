@@ -177,6 +177,13 @@ export const List = () => {
     // return d.slice(index, index + chunkSize);
   };
 
+  const toTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: "auto",
+    });
+  };
+
   return (
     <div
       style={{
@@ -194,6 +201,12 @@ export const List = () => {
       >
         <SimpleListItem />
       </RecycleList>
+      <button
+        // style={{ position: "absolute", top: "50px", right: "50px" }}
+        onClick={toTop}
+      >
+        AAAAAAA
+      </button>
     </div>
   );
 };

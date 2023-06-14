@@ -143,6 +143,7 @@ const RecycleList = ({
   const [rerender, setRerender] = useState(false);
 
   function init() {
+    listContainer.current.scrollTop = 0;
     setItems([]);
     dataObjRef.current = createDataObj({
       getData,
@@ -153,7 +154,6 @@ const RecycleList = ({
     isWaitingData.current = 0;
     scrolling.current = false;
     const ratio = parseInt(getRatio());
-
     const _items = initArray(ratio);
     setItems([..._items]);
   }
